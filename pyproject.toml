@@ -7,8 +7,38 @@ authors = [
     { name = "Jackson Campolattaro", email = "jackson.campolattaro@gmail.com" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "pandas>=2.3.3",
+    "rich>=14.2.0",
+    "torch>=2.9.0",
+    "torch-geometric>=2.7.0",
+]
 
 [build-system]
 requires = ["uv_build>=0.8.4,<0.9.0"]
 build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 128
+
+[tool.ruff.lint]
+select = [
+    "RUF",
+    "I", # isort
+    "E", # pycodestyle
+    "F", # pyflakes
+    "FLY", # flynt
+    "B", # bugbear
+    "SIM", # simplify
+]
+exclude = [
+    "UP", # pyupgrade is currently incompatible with PyG's reflection
+    "Q", # I have my own preferences for quotes
+]
+
+[tool.ruff.format]
+quote-style = "preserve"
+indent-style = "space"
+
+[tool.ty.rules]
+possibly-unbound-attribute = "ignore"
