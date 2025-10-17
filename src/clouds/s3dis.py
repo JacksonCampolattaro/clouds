@@ -83,42 +83,6 @@ VALIDATION_ROOMS = [
 ]
 
 
-def load_s3dis_room(room_path: str) -> Data:
-    scan_files = glob.glob(os.path.join(room_path, 'Annotations/*.txt'))
-
-    x_scans, y_scans = [], []
-    for scan in scan_files:
-        try:
-            # Determine ID based on scan name
-            label = scan.split('/')[-1].split('_')[0]
-            label_id = LABELS_TO_IDS[label]
-
-            # Data is extracted as one large table
-            x = torch.from_numpy(
-                pandas.read_csv(scan, delimiter=' ', dtype=np.float32).to_numpy()
-            )
-            assert x.shape[-1] == 6
-
-            # Drop invalid rows
-            invalid_rows = torch.isnan(x).any(dim=-1)
-            if invalid_rows.any():
-                x = x[~invalid_rows]
-
-            x_scans.append(x)
-            y_scans.append(torch.full_like(x[:, 0], label_id, dtype=torch.long))
-
-        except:  # noqa: E722
-            print(f"\nEncountered invalid data in file '{room_path}', skipping")
-
-    # Merge all loaded data
-    x = torch.cat(x_scans)
-    y = torch.cat(y_scans)
-
-    # Split the x tensor into several properties
-    pos = x[:, :3]
-    pos[:, [0, 1]] = pos[:, [1, 0]]
-    color = x[:, 3:] / 255.0
-    return Data(pos=pos, color=color, y=y)
 
 
 class S3DIS(InMemoryDataset):
@@ -129,7 +93,7 @@ class S3DIS(InMemoryDataset):
         root,
         fold: int = 5,
         split='trainval',
-        num_loops: int = 1,
+        num_loops: int = 30,
         transform: Callable | None = None,
         pre_transform: Callable | None = None,
         pre_filter: Callable | None = None,
@@ -148,7 +112,7 @@ class S3DIS(InMemoryDataset):
                     self._indices += indices
          
         # Having the indices in a canonical order can be useful for testing
-        self._indices = sorted(self._indices)
+        self._indices = sorted(self._indices) * (num_loops if 'train' in split else 1)
 
     @property
     def raw_file_names(self) -> list[str]:
@@ -184,7 +148,7 @@ class S3DIS(InMemoryDataset):
             area_number = int(area_name.split('_')[1])
 
             # Read & fuse the room
-            data = load_s3dis_room(path)
+            data = S3DIS._load_room(path)
 
             # Filter & transform each room
             if self.pre_filter is not None and not self.pre_filter(data):
@@ -214,9 +178,47 @@ class S3DIS(InMemoryDataset):
             with open(splits_path, 'wb') as f:
                 pickle.dump(area_splits, f)
 
+    @staticmethod
+    def _load_room(room_path: str) -> Data:
+        scan_files = glob.glob(os.path.join(room_path, 'Annotations/*.txt'))
+
+        x_scans, y_scans = [], []
+        for scan in scan_files:
+            try:
+                # Determine ID based on scan name
+                label = scan.split('/')[-1].split('_')[0]
+                label_id = LABELS_TO_IDS[label]
+
+                # Data is extracted as one large table
+                x = torch.from_numpy(
+                    pandas.read_csv(scan, delimiter=' ', dtype=np.float32).to_numpy()
+                )
+                assert x.shape[-1] == 6
+
+                # Drop invalid rows
+                invalid_rows = torch.isnan(x).any(dim=-1)
+                if invalid_rows.any():
+                    x = x[~invalid_rows]
+
+                x_scans.append(x)
+                y_scans.append(torch.full_like(x[:, 0], label_id, dtype=torch.long))
+
+            except:  # noqa: E722
+                print(f"\nEncountered invalid data in file '{room_path}', skipping")
+
+        # Merge all loaded data
+        x = torch.cat(x_scans)
+        y = torch.cat(y_scans)
+
+        # Split the x tensor into several properties
+        pos = x[:, :3]
+        pos[:, [0, 1]] = pos[:, [1, 0]]
+        color = x[:, 3:] / 255.0
+        return Data(pos=pos, color=color, y=y)
+
 
 if __name__ == '__main__':
     root = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data', 'S3DIS'))
-    dataset = S3DIS(root=root, split='val')
+    dataset = S3DIS(root=root, split='train')
     print(len(dataset))
     print(dataset.get(0))
