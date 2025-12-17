@@ -46,13 +46,14 @@ class ScanObjectNN(InMemoryDataset):
         transform: Callable | None = None,
         pre_transform: Callable | None = None,
         pre_filter: Callable | None = None,
+        **kwargs,
     ):
         assert augmentation in self.augmentation_variants
         self.augmentation = augmentation
         self.background = background
         self.bg_path = 'main_split' if background else 'main_split_nobg'
 
-        super().__init__(root, transform, pre_transform, pre_filter)
+        super().__init__(root, transform, pre_transform, pre_filter, **kwargs)
 
         path = self.processed_paths[0] if 'train' in split else self.processed_paths[1]
         self.data, self.slices = torch.load(path)
