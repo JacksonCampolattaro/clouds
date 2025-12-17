@@ -90,7 +90,7 @@ class S3DIS(InMemoryDataset):
 
     def __init__(
         self,
-        root,
+        root: str,
         fold: int = 5,
         split='trainval',
         num_loops: int = 30,
