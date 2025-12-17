@@ -9,7 +9,7 @@ from torch_geometric.data import Data, InMemoryDataset, download_url, extract_zi
 
 
 class ScanObjectNN(InMemoryDataset):
-    url =  "https://hkust-vgd.github.io/scanobjectnn/"
+    url =  "https://hkust-vgd.ust.hk/scanobjectnn/h5_files.zip"
 
     class_names: ClassVar[list[str]] = [
         'bag',
@@ -56,7 +56,7 @@ class ScanObjectNN(InMemoryDataset):
         super().__init__(root, transform, pre_transform, pre_filter, **kwargs)
 
         path = self.processed_paths[0] if 'train' in split else self.processed_paths[1]
-        self.data, self.slices = torch.load(path)
+        self.data, self.slices = torch.load(path, weights_only=False)
     
     @property
     def raw_file_names(self):
@@ -94,3 +94,9 @@ class ScanObjectNN(InMemoryDataset):
 
     def __repr__(self):
         return '{}({})'.format(self.__class__.__name__, len(self))
+
+if __name__ == '__main__':
+    root = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data', 'ScanObjectNN'))
+    dataset = ScanObjectNN(root=root, split='train')
+    print(len(dataset))
+    print(dataset.get(0))
