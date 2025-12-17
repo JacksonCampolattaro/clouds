@@ -80,6 +80,7 @@ class ScanObjectNN(InMemoryDataset):
             data_list = []
             for i, pos in enumerate(training['data']):
                 y = training['label'][i]
+                pos[:, [1, 2]] = pos[:, [2, 1]] # Convert to Z-up
                 data_list.append(Data(pos=torch.from_numpy(pos), y=torch.Tensor([y]).long()))
 
             if self.pre_filter is not None:
