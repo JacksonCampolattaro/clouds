@@ -22,7 +22,6 @@ class ModelNetC(InMemoryDataset):
         *[f'dropout_local_{level}' for level in range(5)],
         *[f'add_global_{level}' for level in range(5)],
         *[f'add_local_{level}' for level in range(5)],
-        'all',
     ]
 
     def __init__(
@@ -42,7 +41,7 @@ class ModelNetC(InMemoryDataset):
 
     @property
     def raw_file_names(self):
-        return [f'{split}.h5' for split in self.splits[:-1]]
+        return [f'{split}.h5' for split in self.splits]
 
     @property
     def processed_file_names(self):
@@ -55,7 +54,6 @@ class ModelNetC(InMemoryDataset):
             os.rename(os.path.join(self.root, 'modelnet_c'), self.raw_dir)
 
     def process(self):
-        all_data_list = []
         for raw_path, path in zip(self.raw_paths, self.processed_paths, strict=False):
             f = h5py.File(os.path.join(self.raw_dir, raw_path), 'r')
             pos, label = f['data'][:].astype('float32'), f['label'][:].astype('int64')
@@ -74,14 +72,12 @@ class ModelNetC(InMemoryDataset):
             if not os.path.exists(os.path.dirname(path)):
                 os.makedirs(os.path.dirname(path))
 
-            all_data_list += data_list
             torch.save(self.collate(data_list), path)
 
-        torch.save(self.collate(all_data_list), os.path.join(self.processed_paths[-1]))
 
 
 if __name__ == '__main__':
     root = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data', 'ModelNetC'))
-    dataset = ModelNetC(root=root, split='all')
+    dataset = ModelNetC(root=root, split='clean')
     print(len(dataset))
     print(dataset.get(0))
