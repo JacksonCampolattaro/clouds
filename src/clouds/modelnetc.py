@@ -60,6 +60,7 @@ class ModelNetC(InMemoryDataset):
 
             data_list = []
             for data_pos, data_label in zip(pos, label, strict=False):
+                data_pos[:, [1, 2]] = data_pos[:, [2, 1]]
                 data_list.append(Data(pos=torch.from_numpy(data_pos), y=torch.Tensor(data_label).long()))
 
             if self.pre_filter is not None:
