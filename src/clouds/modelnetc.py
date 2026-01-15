@@ -77,11 +77,11 @@ class ModelNetC(InMemoryDataset):
             all_data_list += data_list
             torch.save(self.collate(data_list), path)
 
-        torch.save(self.collate(all_data_list), os.path.join(self.processed_file_names[-1]))
+        torch.save(self.collate(all_data_list), os.path.join(self.processed_paths[-1]))
 
 
 if __name__ == '__main__':
     root = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data', 'ModelNetC'))
-    dataset = ModelNetC(root=root, split='clean')
+    dataset = ModelNetC(root=root, split='all')
     print(len(dataset))
     print(dataset.get(0))
