@@ -212,7 +212,6 @@ class S3DIS(InMemoryDataset):
 
         # Split the x tensor into several properties
         pos = x[:, :3]
-        pos[:, [0, 1]] = pos[:, [1, 0]]
         color = x[:, 3:] / 255.0
         return Data(pos=pos, color=color, y=y)
 
