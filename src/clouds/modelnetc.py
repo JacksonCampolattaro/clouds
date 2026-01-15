@@ -42,7 +42,7 @@ class ModelNetC(InMemoryDataset):
 
     @property
     def raw_file_names(self):
-        return [f'{split}.h5' for split in self.splits]
+        return [f'{split}.h5' for split in self.splits[:-1]]
 
     @property
     def processed_file_names(self):
