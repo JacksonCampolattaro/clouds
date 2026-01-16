@@ -7,9 +7,9 @@ import torch
 from torch_geometric.data import Data, InMemoryDataset, extract_zip
 
 
-class ModelNetC(InMemoryDataset):
+class ShapeNetC(InMemoryDataset):
     # see: https://pointcloud-c.github.io/home.html
-    url = 'https://drive.google.com/uc?id=1KE6MmXMtfu_mgxg4qLPdEwVD5As8B0rm'
+    url = 'https://drive.google.com/uc?id=1OqdJ9q1GjVu46QdPC4coa8M5e-xOrJ_g'
 
     splits: ClassVar[list[str]] = [
         'clean',
@@ -49,17 +49,18 @@ class ModelNetC(InMemoryDataset):
         if (not os.path.exists(os.path.join(self.raw_dir, self.raw_file_names[0]))):
             path = gdown.download(self.url, self.root + '/')
             extract_zip(path, self.root)
-            os.rename(os.path.join(self.root, 'modelnet_c'), self.raw_dir)
+            os.rename(os.path.join(self.root, 'shapenet_c'), self.raw_dir)
 
     def process(self):
         for raw_path, path in zip(self.raw_paths, self.processed_paths, strict=False):
             f = h5py.File(os.path.join(self.raw_dir, raw_path), 'r')
-            pos, label = f['data'][:].astype('float32'), f['label'][:].astype('int64')
+
+            pos, cat, label = f['data'][:].astype('float32'), f['label'][:].astype('int64'), f['pid'][:].astype('int64')
 
             data_list = []
-            for data_pos, data_label in zip(pos, label, strict=False):
+            for data_pos, data_label, data_cat in zip(pos, label, cat, strict=True):
                 data_pos[:, [1, 2]] = data_pos[:, [2, 1]]
-                data_list.append(Data(pos=torch.from_numpy(data_pos), y=torch.Tensor(data_label).long()))
+                data_list.append(Data(pos=torch.from_numpy(data_pos), y=torch.Tensor(data_label).long(), category=data_cat))
 
             if self.pre_filter is not None:
                 data_list = [d for d in data_list if self.pre_filter(d)]
@@ -75,7 +76,7 @@ class ModelNetC(InMemoryDataset):
 
 
 if __name__ == '__main__':
-    root = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data', 'ModelNetC'))
-    dataset = ModelNetC(root=root, split='clean')
+    root = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data', 'ShapeNetC'))
+    dataset = ShapeNetC(root=root, split='clean')
     print(len(dataset))
     print(dataset.get(0))
