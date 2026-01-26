@@ -59,8 +59,14 @@ class ShapeNetC(InMemoryDataset):
 
             data_list = []
             for data_pos, data_label, data_cat in zip(pos, label, cat, strict=True):
-                data_pos[:, [1, 2]] = data_pos[:, [2, 1]]
-                data_list.append(Data(pos=torch.from_numpy(data_pos), y=torch.Tensor(data_label).long(), category=data_cat))
+                # data_pos[:, [1, 2]] = data_pos[:, [2, 1]]
+                data_list.append(
+                    Data(
+                        pos=torch.from_numpy(data_pos),
+                        y=torch.Tensor(data_label).long(),
+                        category=torch.Tensor(data_cat),
+                    )
+                )
 
             if self.pre_filter is not None:
                 data_list = [d for d in data_list if self.pre_filter(d)]
