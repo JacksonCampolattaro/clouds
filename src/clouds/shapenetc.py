@@ -64,7 +64,7 @@ class ShapeNetC(InMemoryDataset):
                     Data(
                         pos=torch.from_numpy(data_pos),
                         y=torch.Tensor(data_label).long(),
-                        category=torch.Tensor(data_cat),
+                        category=torch.Tensor(data_cat).long(),
                     )
                 )
 
