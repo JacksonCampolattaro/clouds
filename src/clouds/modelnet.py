@@ -28,7 +28,8 @@ class ModelNet40(InMemoryDataset):
         **kwargs,
     ):
         super().__init__(root, transform, pre_transform, pre_filter, **kwargs)
-        self.data, self.slices = torch.load(os.path.join(self.processed_dir, f'{split}.pt'), weights_only=False)
+        path = self.processed_file_names[0] if 'train' in split else self.processed_file_names[1]
+        self.data, self.slices = torch.load(path, weights_only=False)
 
     @property
     def raw_file_names(self):
