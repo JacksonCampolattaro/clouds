@@ -54,7 +54,7 @@ class ModelNet40(InMemoryDataset):
                 f = h5py.File(os.path.join(self.raw_dir, raw_path), 'r')
                 # This is a roundabout way of doing this, but isn't a performance problem
                 f_pos = torch.from_numpy(f['data'][:]).float()
-                f_pos[:, [1, 2]] = f_pos[:, [2, 1]]  # Convert to Z-up
+                f_pos[:, :, [1, 2]] = f_pos[:, :, [2, 1]]  # Convert to Z-up
                 f_y = torch.from_numpy(f['label'][:]).long()
                 for pos, y in zip(f_pos, f_y, strict=True):
                     data_list.append(Data(pos=pos, y=y))
