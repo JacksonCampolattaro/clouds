@@ -54,10 +54,16 @@ class ModelNet40(InMemoryDataset):
                 f = h5py.File(os.path.join(self.raw_dir, raw_path), 'r')
                 # This is a roundabout way of doing this, but isn't a performance problem
                 f_pos = torch.from_numpy(f['data'][:]).float()
-                f_pos[:, :, [1, 2]] = f_pos[:, :, [2, 1]]  # Convert to Z-up
                 f_y = torch.from_numpy(f['label'][:]).long()
+                f_pos[:, :, [1, 2]] = f_pos[:, :, [2, 1]]  # Convert to Z-up
                 for pos, y in zip(f_pos, f_y, strict=True):
                     data_list.append(Data(pos=pos, y=y))
+
+            if self.pre_filter is not None:
+                data_list = [d for d in data_list if self.pre_filter(d)]
+
+            if self.pre_transform is not None:
+                data_list = [self.pre_transform(d) for d in data_list]
 
             torch.save(self.collate(data_list), os.path.join(self.processed_dir, f'{split}.pt'))
 
@@ -66,4 +72,9 @@ if __name__ == '__main__':
     root = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data', 'ModelNet40'))
     dataset = ModelNet40(root=root)
     print(len(dataset))
-    print(dataset.get(0))
+    print(dataset.get(0).pos)
+    # import polyscope
+    # polyscope.init()
+    # polyscope.set_up_dir('z_up')
+    # polyscope.register_point_cloud('x', dataset.get(0).pos)
+    # polyscope.show()
