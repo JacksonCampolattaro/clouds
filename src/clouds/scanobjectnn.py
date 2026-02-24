@@ -76,10 +76,10 @@ class ScanObjectNN(InMemoryDataset):
 
     def process(self):
         for raw_path, path in zip(self.raw_paths, self.processed_paths, strict=True):
-            training = h5py.File(os.path.join(self.raw_dir, raw_path), 'r')
+            f = h5py.File(os.path.join(self.raw_dir, raw_path), 'r')
             data_list = []
-            for i, pos in enumerate(training['data']):
-                y = training['label'][i]
+            for i, pos in enumerate(f['data']):
+                y = f['label'][i]
                 pos[:, [1, 2]] = pos[:, [2, 1]] # Convert to Z-up
                 data_list.append(Data(pos=torch.from_numpy(pos), y=torch.Tensor([y]).long()))
 
