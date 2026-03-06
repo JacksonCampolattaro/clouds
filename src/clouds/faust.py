@@ -50,12 +50,12 @@ class FAUSTRemeshed(InMemoryDataset):
     # url = 'https://surfdrive.surf.nl/files/index.php/s/KLSxAN0QEsfJuBV/download'
     url = 'https://drive.google.com/uc?id=1C-9GFsTl5xwa0RUmC_m1nnj87QUguh6j'
 
-    def __init__(self, root, train=True, transform=None, pre_transform=None, pre_filter=None, num_loops: int = 10):
+    def __init__(self, root, split: str = 'train', transform=None, pre_transform=None, pre_filter=None, num_loops: int = 10):
         super().__init__(root, transform, pre_transform, pre_filter)
-        path = self.processed_paths[0] if train else self.processed_paths[-1]
+        path = self.processed_paths[0] if 'train' in split else self.processed_paths[-1]
         self.data, self.slices = torch.load(path, weights_only=False)
 
-        self.num_loops = num_loops if train else 1
+        self.num_loops = num_loops if 'train' in split else 1
 
     def len(self) -> int:
         return super().len() * self.num_loops
