@@ -12,6 +12,7 @@ __pycache__/
 *.log
 
 data/
+data.daic/
 
 uv.lock
 
