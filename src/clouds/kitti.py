@@ -122,14 +122,14 @@ class SemanticKITTI(Dataset):
         for seq in sequences:
             seq_dir = os.path.join(self.root, 'dataset', 'sequences', f'{seq:02d}')
             scans_dir, labels_dir = os.path.join(seq_dir, 'velodyne'), os.path.join(seq_dir, 'labels')
-            assert os.path.exists(scans_dir) and os.path.exists(labels_dir)
+            assert os.path.exists(scans_dir)
             for scan_file in sorted(os.scandir(scans_dir), key=lambda e: e.name):
                 self._samples.append(
                     (
                         # Scan
                         scan_file.path,
                         # Labels
-                        os.path.join(labels_dir, os.path.splitext(scan_file.name)[0] + '.label'),
+                        None if 'test' in split else os.path.join(labels_dir, os.path.splitext(scan_file.name)[0] + '.label'),
                     )
                 )
 
@@ -144,8 +144,11 @@ class SemanticKITTI(Dataset):
         pos, intensity = scan[:, :3], scan[:, 3:4]
 
         # Load labels
-        ids = torch.from_numpy(np.fromfile(label_path, dtype=np.uint32) & 0xFFFF).long()
-        y = ID_TO_Y_LUT[ids]
+        if label_path:
+            ids = torch.from_numpy(np.fromfile(label_path, dtype=np.uint32) & 0xFFFF).long()
+            y = ID_TO_Y_LUT[ids]
+        else:
+            y = torch.full((pos.size(0),), -1, dtype=torch.long)
 
         return Data(pos=pos, intensity=intensity, y=y)
 
@@ -153,6 +156,6 @@ class SemanticKITTI(Dataset):
 if __name__ == '__main__':
     # data.daic needs to be mounted with sshfs, this is a massive dataset!
     root = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data.daic', 'SemanticKITTI'))
-    dataset = SemanticKITTI(root=root, split='train')
+    dataset = SemanticKITTI(root=root, split='test')
     print(len(dataset))
     print(dataset.get(0))
