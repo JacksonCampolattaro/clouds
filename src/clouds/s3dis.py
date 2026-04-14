@@ -4,7 +4,6 @@ import pickle
 from collections.abc import Callable
 
 import numpy as np
-import pandas
 import torch
 from rich import print, progress
 from torch_geometric.data import Data, InMemoryDataset, download_url, extract_zip
@@ -184,27 +183,21 @@ class S3DIS(InMemoryDataset):
 
         x_scans, y_scans = [], []
         for scan in scan_files:
-            try:
-                # Determine ID based on scan name
-                label = scan.split('/')[-1].split('_')[0]
-                label_id = LABELS_TO_IDS[label]
+            # Determine ID based on scan name
+            label = scan.split('/')[-1].split('_')[0]
+            label_id = LABELS_TO_IDS[label]
 
-                # Data is extracted as one large table
-                x = torch.from_numpy(
-                    pandas.read_csv(scan, delimiter=' ', dtype=np.float32).to_numpy()
-                )
-                assert x.shape[-1] == 6
+            # Data is extracted as one large table
+            x = torch.from_numpy(np.genfromtxt(scan, delimiter=' ', dtype=np.float32))
+            assert x.shape[-1] == 6
 
-                # Drop invalid rows
-                invalid_rows = torch.isnan(x).any(dim=-1)
-                if invalid_rows.any():
-                    x = x[~invalid_rows]
+            # Drop invalid rows
+            invalid_rows = torch.isnan(x).any(dim=-1)
+            if invalid_rows.any():
+                x = x[~invalid_rows]
 
-                x_scans.append(x)
-                y_scans.append(torch.full_like(x[:, 0], label_id, dtype=torch.long))
-
-            except:  # noqa: E722
-                print(f"\nEncountered invalid data in file '{room_path}', skipping")
+            x_scans.append(x)
+            y_scans.append(torch.full_like(x[:, 0], label_id, dtype=torch.long))
 
         # Merge all loaded data
         x = torch.cat(x_scans)
