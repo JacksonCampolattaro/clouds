@@ -188,7 +188,7 @@ class S3DIS(InMemoryDataset):
             label_id = LABELS_TO_IDS[label]
 
             # Data is extracted as one large table
-            x = torch.from_numpy(np.genfromtxt(scan, delimiter=' ', dtype=np.float32))
+            x = torch.from_numpy(np.genfromtxt(scan, delimiter=' ', dtype=np.float32, invalid_raise=False))
             assert x.shape[-1] == 6
 
             # Drop invalid rows
