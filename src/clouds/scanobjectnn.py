@@ -60,7 +60,7 @@ class ScanObjectNN(InMemoryDataset):
     
     @property
     def raw_file_names(self):
-        return [os.path.join(self.bg_path, filename) for filename in self.raw_file_dict[self.augmentation]]
+        return [os.path.join('h5_files', self.bg_path, filename) for filename in self.raw_file_dict[self.augmentation]]
 
     @property
     def processed_file_names(self):
