@@ -100,7 +100,8 @@ class SemanticKITTI(Dataset):
     splits: ClassVar[dict[str, list[int]]] = dict(
         train=[0, 1, 2, 3, 4, 5, 6, 7, 9, 10],
         val=[8],
-        test=[11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+        test=[8],
+        pred=[11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
     )
 
     def __init__(
@@ -129,7 +130,7 @@ class SemanticKITTI(Dataset):
                         # Scan
                         scan_file.path,
                         # Labels
-                        None if 'test' in split else os.path.join(labels_dir, os.path.splitext(scan_file.name)[0] + '.label'),
+                        None if 'pred' in split else os.path.join(labels_dir, os.path.splitext(scan_file.name)[0] + '.label'),
                     )
                 )
 
