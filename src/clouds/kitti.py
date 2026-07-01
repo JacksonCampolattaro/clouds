@@ -1,9 +1,13 @@
 import os
-from typing import Callable, ClassVar
+import random
+from typing import Callable, ClassVar, Union
 
 import numpy as np
 import torch
+from torch import Tensor
 from torch_geometric.data import Data, Dataset
+from torch_geometric.data.data import BaseData
+from torch_geometric.data.dataset import IndexType
 
 # Adapted from:
 # https://github.com/Pointcept/Pointcept/blob/04a0232b70f5c7091ffdc6bfe7a476e3eb7daff2/pointcept/datasets/semantic_kitti.py#L22
@@ -110,9 +114,12 @@ class SemanticKITTI(Dataset):
         split='trainval',
         transform: Callable | None = None,
         log: bool = True,
+        mix3d_p: float = 0,
         **kwargs,
     ):
         super().__init__(root, transform=transform, log=log)
+
+        self.mix3d_p = mix3d_p if 'train' in split else 0
 
         sequences = []
         for split_name, split_seq in SemanticKITTI.splits.items():
@@ -153,6 +160,25 @@ class SemanticKITTI(Dataset):
 
         return Data(pos=pos, intensity=intensity, y=y)
 
+    def __getitem__(self, idx: Union[int, np.integer, IndexType]) -> Union['Dataset', BaseData]:
+        if (
+            isinstance(idx, (int, np.integer))
+            or (isinstance(idx, Tensor) and idx.dim() == 0)
+            or (isinstance(idx, np.ndarray) and np.isscalar(idx))
+        ):
+            data = self.get(self.indices()[idx])
+
+            if random.random() < self.mix3d_p:
+                aug_data = self.get(random.choice(self.indices()))
+                data.pos = torch.cat([data.pos, aug_data.pos], dim=0)
+                data.intensity = torch.cat([data.intensity, aug_data.intensity], dim=0)
+                data.y = torch.cat([data.y, aug_data.y], dim=0)
+
+            data = data if self.transform is None else self.transform(data)
+            return data
+
+        else:
+            return self.index_select(idx)
 
 if __name__ == '__main__':
     # data.daic needs to be mounted with sshfs, this is a massive dataset!
