@@ -221,6 +221,7 @@ class S3DIS(InMemoryDataset):
             aug_data = self.get(random.choice(self.indices()))
             aug_data = RandomRotate()(aug_data)
             offset = data.pos.mean(dim=0) - aug_data.pos.mean(dim=0)
+            offset[2] = 0
             data.pos = torch.cat([data.pos, aug_data.pos + offset], dim=0)
             data.color = torch.cat([data.color, aug_data.color], dim=0)
             data.y = torch.cat([data.y, aug_data.y], dim=0)
