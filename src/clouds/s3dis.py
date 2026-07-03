@@ -12,6 +12,8 @@ from torch_geometric.data import Data, InMemoryDataset, download_url, extract_zi
 from torch_geometric.data.data import BaseData
 from torch_geometric.io import fs
 
+from clouds.transforms.random_affine import RandomRotate
+
 IDS_TO_LABELS = {
     0: 'ceiling',
     1: 'floor',
@@ -217,6 +219,7 @@ class S3DIS(InMemoryDataset):
         data = super().get(idx)
         if random.random() < self.mix3d_p:
             aug_data = self.get(random.choice(self.indices()))
+            aug_data = RandomRotate()(aug_data)
             offset = data.pos.mean(dim=0) - aug_data.pos.mean(dim=0)
             data.pos = torch.cat([data.pos, aug_data.pos + offset], dim=0)
             data.color = torch.cat([data.color, aug_data.color], dim=0)
