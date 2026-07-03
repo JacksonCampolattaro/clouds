@@ -1,12 +1,15 @@
 import glob
 import os
 import pickle
+import random
 from collections.abc import Callable
+from typing import Callable
 
 import numpy as np
 import torch
 from rich import print, progress
 from torch_geometric.data import Data, InMemoryDataset, download_url, extract_zip
+from torch_geometric.data.data import BaseData
 from torch_geometric.io import fs
 
 IDS_TO_LABELS = {
@@ -96,12 +99,14 @@ class S3DIS(InMemoryDataset):
         transform: Callable | None = None,
         pre_transform: Callable | None = None,
         pre_filter: Callable | None = None,
+        mix3d_p: float = 0,
         **kwargs,
     ):
         self.split = split
         self.test_area = 6 if fold == 0 else fold
         super().__init__(root=root, transform=transform, pre_filter=pre_filter, pre_transform=pre_transform, **kwargs)
         self.data, self.slices = torch.load(os.path.join(self.processed_paths[-1]), weights_only=False)
+        self.mix3d_p = mix3d_p if 'train' in split else 0
 
         self._indices = []
         with open(os.path.join(self.processed_dir, f'splits_area{self.test_area}.pkl'), 'rb') as splits_file:
@@ -207,6 +212,15 @@ class S3DIS(InMemoryDataset):
         pos = x[:, :3]
         color = x[:, 3:] / 255.0
         return Data(pos=pos, color=color, y=y)
+
+    def get(self, idx: int) -> BaseData:
+        data = super().get(idx)
+        if random.random() < self.mix3d_p:
+            aug_data = self.get(random.randrange(len(self)))
+            data.pos = torch.cat([data.pos, aug_data.pos], dim=0)
+            data.color = torch.cat([data.color, aug_data.color], dim=0)
+            data.y = torch.cat([data.y, aug_data.y], dim=0)
+        return data
 
 
 if __name__ == '__main__':
