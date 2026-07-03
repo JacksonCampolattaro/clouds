@@ -218,7 +218,7 @@ class S3DIS(InMemoryDataset):
     def get(self, idx: int) -> BaseData:
         data = super().get(idx)
         if random.random() < self.mix3d_p:
-            aug_data = self.get(random.choice(self.indices()))
+            aug_data = super().get(random.choice(self.indices()))
             aug_data = RandomRotate()(aug_data)
             offset = data.pos.mean(dim=0) - aug_data.pos.mean(dim=0)
             offset[2] = 0
