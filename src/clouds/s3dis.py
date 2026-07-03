@@ -216,7 +216,7 @@ class S3DIS(InMemoryDataset):
     def get(self, idx: int) -> BaseData:
         data = super().get(idx)
         if random.random() < self.mix3d_p:
-            aug_data = self.get(random.randrange(len(self)))
+            aug_data = self.get(random.choice(self.indices()))
             data.pos = torch.cat([data.pos, aug_data.pos], dim=0)
             data.color = torch.cat([data.color, aug_data.color], dim=0)
             data.y = torch.cat([data.y, aug_data.y], dim=0)
