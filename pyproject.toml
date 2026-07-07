@@ -15,6 +15,17 @@ dependencies = [
     "rich>=14.2.0",
 ]
 
+[dependency-groups]
+dev = [
+    "pykeops>=2.3",
+    "pynanoflann>=0.10.0",
+    "pytest>=9.1.1",
+    "torch-fpsample",
+]
+
+[tool.uv.sources]
+torch-fpsample = { git = "https://github.com/leonardodalinky/pytorch_fpsample", rev = "be93a08" }
+
 [build-system]
 requires = ["uv_build>=0.11,<0.12"]
 build-backend = "uv_build"

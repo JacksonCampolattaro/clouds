@@ -54,6 +54,7 @@ def random_rotation_matrix(
     if dim == 2:
         return torch.tensor([[cos, sin], [-sin, cos]], device=device)
 
+    # TODO: this should work for arbitrary dimensionality!
     rotation_matrix = torch.eye(dim, device=device)
     for ax in axis:
         rot = torch.eye(3, device=device)
@@ -249,14 +250,11 @@ class RandomScaleAndRotate(BaseTransform):
 
         # Generate scaling matrix if needed
         if apply_scale:
-            scaling_matrix = random_scaling_matrix(dim, (self.low, self.high), self.uniform_scaling, device)
-            transform_matrix = scaling_matrix
+            transform_matrix = random_scaling_matrix(dim, (self.low, self.high), self.uniform_scaling, device)
 
         # Generate rotation matrix if needed
         if apply_rotate:
-            rotation_matrix = random_rotation_matrix(dim, self.degrees, self.axis, device)
-            # Apply scaling first, then rotation (matrix multiplication order is reversed)
-            transform_matrix = rotation_matrix @ transform_matrix
+            transform_matrix = random_rotation_matrix(dim, self.degrees, self.axis, device) @ transform_matrix
 
         # Apply the combined transformation
         data = LinearTransformation(transform_matrix)(data)
