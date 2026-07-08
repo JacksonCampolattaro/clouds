@@ -4,6 +4,8 @@ from torch_geometric.data import Data
 from torch_geometric.transforms import BaseTransform
 from torch_geometric.utils._scatter import scatter_argmax
 
+from clouds.transforms.apply_selection import apply_selection
+
 
 def _select_random_node_per_cluster(cluster: Tensor) -> Tensor:
     """Randomly select one point from each cluster."""
@@ -56,3 +58,7 @@ class ClusterSelect(BaseTransform):
             f"deterministic={self.deterministic}, "
             f"pick={self.pick}, "
         )
+
+class ClusterSample(ClusterSelect):
+    def forward(data: Data) -> Data:
+        return apply_selection(super().forward(data))

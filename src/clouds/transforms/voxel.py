@@ -98,3 +98,7 @@ class VoxelSelect(BaseTransform):
             del data.cluster
         
         return data
+
+class VoxelSample(VoxelSelect):
+    def forward(data: Data) -> Data:
+        return apply_selection(super().forward(data))
