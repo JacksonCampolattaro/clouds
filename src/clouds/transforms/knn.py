@@ -53,7 +53,7 @@ def _keops_knn(
     query_batch: Tensor | None = None,
     **kwargs,
 ) -> Tensor:
-    
+
     query_pos = pos if query_pos is None else query_pos
     query_batch = batch if query_batch is None else query_batch
     p_i = LazyTensor(pos.float().unsqueeze(-3))
@@ -70,6 +70,7 @@ def _cached_kdtree(pos: Tensor):
     kdtree = KDTree()
     kdtree.fit(pos.numpy())
     return kdtree
+
 
 def _nanoflann_knn(
     pos: Tensor,
@@ -148,5 +149,3 @@ class KNNSourceGraph(BaseTransform):
         ).long()
 
         return SourceIndexedData(**data.to_dict())
-
-

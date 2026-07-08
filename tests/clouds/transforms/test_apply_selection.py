@@ -11,12 +11,14 @@ from clouds.transforms.apply_selection import ApplySelection, select_knn_edges
         pytest.param(
             # 4 nodes, k=2 neighbors each; keep nodes 0 and 2, and their
             # neighbors all survive the selection.
-            torch.tensor([
-                [0, 2],  # node 0 -> neighbors 0, 2
-                [1, 3],  # node 1 (dropped)
-                [2, 0],  # node 2 -> neighbors 2, 0
-                [3, 1],  # node 3 (dropped)
-            ]),
+            torch.tensor(
+                [
+                    [0, 2],  # node 0 -> neighbors 0, 2
+                    [1, 3],  # node 1 (dropped)
+                    [2, 0],  # node 2 -> neighbors 2, 0
+                    [3, 1],  # node 3 (dropped)
+                ]
+            ),
             torch.tensor([True, False, True, False]),
             torch.tensor([[0, 1], [1, 0]]),
             id='boolean_mask_no_drops',
@@ -24,11 +26,13 @@ from clouds.transforms.apply_selection import ApplySelection, select_knn_edges
         pytest.param(
             # 3 nodes, k=2; keep nodes 0 and 1. Node 0's second neighbor
             # (node 2) is dropped and should become a self-loop.
-            torch.tensor([
-                [0, 2],
-                [1, 0],
-                [2, 1],
-            ]),
+            torch.tensor(
+                [
+                    [0, 2],
+                    [1, 0],
+                    [2, 1],
+                ]
+            ),
             torch.tensor([True, True, False]),
             torch.tensor([[0, 0], [1, 0]]),
             id='boolean_mask_dropped_neighbor_becomes_self_loop',
@@ -36,11 +40,13 @@ from clouds.transforms.apply_selection import ApplySelection, select_knn_edges
         pytest.param(
             # Same graph as above, but selection given as an integer index
             # tensor instead of a boolean mask.
-            torch.tensor([
-                [0, 2],
-                [1, 0],
-                [2, 1],
-            ]),
+            torch.tensor(
+                [
+                    [0, 2],
+                    [1, 0],
+                    [2, 1],
+                ]
+            ),
             torch.tensor([0, 1]),
             torch.tensor([[0, 0], [1, 0]]),
             id='integer_index_selection',
@@ -67,7 +73,6 @@ def test_select_knn_edges_output_shape():
     out = select_knn_edges(edge_index, mask)
 
     assert out.shape == (6, 4)
-
 
 
 @pytest.fixture
@@ -109,6 +114,7 @@ def make_data():
 
     return _make_data
 
+
 class TestApplySelection:
     def test_passthrough_without_selection_index(self):
         data = Data(x=torch.randn(3, 2))
@@ -120,7 +126,6 @@ class TestApplySelection:
         # be the same object, but it should carry the same tensors untouched.
         assert out.x is data.x
 
-
     def test_node_attrs_filtered(self, make_data):
         data = make_data(num_nodes=4)
         transform = ApplySelection()
@@ -130,7 +135,6 @@ class TestApplySelection:
         assert torch.equal(out.x, data.x[data.selection_index])
         assert torch.equal(out.pos, data.pos[data.selection_index])
         assert out.num_nodes == 2
-
 
     def test_edge_index_remapped(self, make_data):
         # Only meaningful for the dense (N, K) kNN edge_index format select_knn_edges expects.
@@ -142,7 +146,6 @@ class TestApplySelection:
         assert 'edge_index' in out
         assert out.edge_index.shape == (2, 2)
 
-
     def test_assertion_on_empty_selection(self, make_data):
         data = make_data(num_nodes=4)
         data.selection_index = torch.tensor([], dtype=torch.bool)
@@ -150,7 +153,6 @@ class TestApplySelection:
 
         with pytest.raises(ValueError):
             transform(data)
-
 
     def test_ptr_recomputed_from_batch(self, make_data):
         data = make_data(num_nodes=4, with_batch=True)
@@ -163,5 +165,3 @@ class TestApplySelection:
         # Kept nodes 0, 2, 3 -> batch becomes [0, 1, 1] -> counts [1, 2]
         assert torch.equal(out.batch, torch.tensor([0, 1, 1]))
         assert torch.equal(out.ptr, torch.tensor([0, 1, 3]))
-
-

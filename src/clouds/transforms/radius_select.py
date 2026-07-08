@@ -65,7 +65,9 @@ class RadiusSelect(BaseTransform):
             f"dims={self.dims})"
         )
 
+
 SphereSelect = RadiusSelect
+
 
 class SphereCrop(SphereSelect):
     def forward(data: Data) -> Data:

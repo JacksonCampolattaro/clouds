@@ -8,7 +8,6 @@ from torch_geometric.io import fs
 
 
 class ModelNet40(InMemoryDataset):
-
     # Thanks to Msun for mirroring this data on HuggingFace!
     url = 'https://huggingface.co/datasets/Msun/modelnet40/resolve/main/modelnet40_ply_hdf5_2048.zip'
 
@@ -16,7 +15,6 @@ class ModelNet40(InMemoryDataset):
         'train': [f'ply_data_train{i}.h5' for i in range(5)],
         'test': [f'ply_data_test{i}.h5' for i in range(2)],
     }
-
 
     def __init__(
         self,

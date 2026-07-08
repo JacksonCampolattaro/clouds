@@ -16,11 +16,11 @@ def _select_random_node_per_cluster(cluster: Tensor) -> Tensor:
 
 def _select_nth_node_per_cluster(cluster: Tensor, n: int) -> Tensor:
     """Deterministically select a point from each cluster."""
-     
+
     # Calculate cluster sizes and starting indices
     cluster_sizes = torch.bincount(cluster)
     cluster_starts = torch.cumsum(cluster_sizes, dim=0) - cluster_sizes
-    
+
     # Select offset point from each cluster
     cluster_offsets = n % cluster_sizes
     return (cluster_starts + cluster_offsets).to(torch.long)
@@ -28,14 +28,14 @@ def _select_nth_node_per_cluster(cluster: Tensor, n: int) -> Tensor:
 
 class ClusterSelect(BaseTransform):
     """Select points from clusters using deterministic or random selection.
-                        
+
     Assumes clusters are contiguous, sequential, and not shared between batches.
     """
 
     def __init__(
-        self, 
-        deterministic: bool = False, 
-        pick: int | None = None, 
+        self,
+        deterministic: bool = False,
+        pick: int | None = None,
     ) -> None:
         super().__init__()
         self.deterministic = deterministic
@@ -53,11 +53,8 @@ class ClusterSelect(BaseTransform):
         return data
 
     def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}("
-            f"deterministic={self.deterministic}, "
-            f"pick={self.pick}, "
-        )
+        return f"{self.__class__.__name__}(deterministic={self.deterministic}, pick={self.pick}, "
+
 
 class ClusterSample(ClusterSelect):
     def forward(data: Data) -> Data:

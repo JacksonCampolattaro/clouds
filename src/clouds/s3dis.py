@@ -87,8 +87,6 @@ VALIDATION_ROOMS = [
 ]
 
 
-
-
 class S3DIS(InMemoryDataset):
     url = 'https://cvg-data.inf.ethz.ch/s3dis/Stanford3dDataset_v1.2_Aligned_Version.zip'
 
@@ -116,7 +114,7 @@ class S3DIS(InMemoryDataset):
             for split_name, indices in splits.items():
                 if split_name in split:
                     self._indices += indices
-         
+
         # Having the indices in a canonical order can be useful for testing
         self._indices = sorted(self._indices) * (num_loops if 'train' in split else 1)
 
@@ -144,9 +142,7 @@ class S3DIS(InMemoryDataset):
 
     def process(self) -> None:
         filenames = glob.glob(os.path.join(self.raw_dir, '*/*'), recursive=True)
-        splits: dict[int, dict[str, list[int]]] = {
-            a: {'train': [], 'val': [], 'test': []} for a in range(1, 7)
-        }
+        splits: dict[int, dict[str, list[int]]] = {a: {'train': [], 'val': [], 'test': []} for a in range(1, 7)}
         data_list = []
 
         def load_room(idx: int, path: str):

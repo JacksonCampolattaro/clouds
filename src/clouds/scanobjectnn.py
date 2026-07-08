@@ -9,7 +9,7 @@ from torch_geometric.data import Data, InMemoryDataset, download_url, extract_zi
 
 
 class ScanObjectNN(InMemoryDataset):
-    url =  "https://hkust-vgd.ust.hk/scanobjectnn/h5_files.zip"
+    url = "https://hkust-vgd.ust.hk/scanobjectnn/h5_files.zip"
 
     class_names: ClassVar[list[str]] = [
         'bag',
@@ -57,7 +57,7 @@ class ScanObjectNN(InMemoryDataset):
 
         path = self.processed_paths[0] if 'train' in split else self.processed_paths[1]
         self.data, self.slices = torch.load(path, weights_only=False)
-    
+
     @property
     def raw_file_names(self):
         return [os.path.join('h5_files', self.bg_path, filename) for filename in self.raw_file_dict[self.augmentation]]
@@ -70,7 +70,7 @@ class ScanObjectNN(InMemoryDataset):
         return [os.path.join(folder, 'training.pt'), os.path.join(folder, 'test.pt')]
 
     def download(self):
-        if (not os.path.exists(os.path.join(self.raw_dir, self.raw_file_names[0]))):
+        if not os.path.exists(os.path.join(self.raw_dir, self.raw_file_names[0])):
             path = download_url(self.url, self.raw_dir)
             extract_zip(path, self.raw_dir)
 
@@ -80,7 +80,7 @@ class ScanObjectNN(InMemoryDataset):
             data_list = []
             for i, pos in enumerate(f['data']):
                 y = f['label'][i]
-                pos[:, [1, 2]] = pos[:, [2, 1]] # Convert to Z-up
+                pos[:, [1, 2]] = pos[:, [2, 1]]  # Convert to Z-up
                 data_list.append(Data(pos=torch.from_numpy(pos), y=torch.Tensor([y]).long()))
 
             if self.pre_filter is not None:
@@ -88,13 +88,14 @@ class ScanObjectNN(InMemoryDataset):
 
             if self.pre_transform is not None:
                 data_list = [self.pre_transform(d) for d in data_list]
-            
+
             if not os.path.exists(os.path.dirname(path)):
                 os.makedirs(os.path.dirname(path))
             torch.save(self.collate(data_list), path)
 
     def __repr__(self):
         return '{}({})'.format(self.__class__.__name__, len(self))
+
 
 if __name__ == '__main__':
     root = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data', 'ScanObjectNN'))

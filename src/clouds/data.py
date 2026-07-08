@@ -6,7 +6,6 @@ from torch_geometric.data.data import Index
 
 
 class SourceIndexedData(Data):
-
     def __cat_dim__(self, key: str, value: Any, *args, **kwargs):
         if key == 'edge_index' and value.size(0) != 2:
             return 0

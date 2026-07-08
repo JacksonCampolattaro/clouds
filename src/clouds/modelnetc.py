@@ -36,7 +36,6 @@ class ModelNetC(InMemoryDataset):
         split = 'clean' if split == 'val' else split
         self.data, self.slices = torch.load(os.path.join(self.processed_dir, f'{split}.pt'), weights_only=False)
 
-
     @property
     def raw_file_names(self):
         return [f'{split}.h5' for split in self.splits]
@@ -46,7 +45,7 @@ class ModelNetC(InMemoryDataset):
         return [f'{split}.pt' for split in self.splits]
 
     def download(self):
-        if (not os.path.exists(os.path.join(self.raw_dir, self.raw_file_names[0]))):
+        if not os.path.exists(os.path.join(self.raw_dir, self.raw_file_names[0])):
             path = gdown.download(self.url, self.root + '/')
             extract_zip(path, self.root)
             os.rename(os.path.join(self.root, 'modelnet_c'), self.raw_dir)
@@ -66,12 +65,11 @@ class ModelNetC(InMemoryDataset):
 
             if self.pre_transform is not None:
                 data_list = [self.pre_transform(d) for d in data_list]
-            
+
             if not os.path.exists(os.path.dirname(path)):
                 os.makedirs(os.path.dirname(path))
 
             torch.save(self.collate(data_list), path)
-
 
 
 if __name__ == '__main__':

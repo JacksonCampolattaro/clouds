@@ -102,6 +102,7 @@ class FAUSTRemeshed(InMemoryDataset):
         torch.save(self.collate(data_list[:79]), self.processed_paths[0])
         torch.save(self.collate(data_list[79:]), self.processed_paths[1])
 
+
 if __name__ == '__main__':
     root = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data', 'FAUSTRemeshed'))
     dataset = FAUSTRemeshed(root=root)

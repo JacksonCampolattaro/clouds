@@ -32,7 +32,7 @@ ID_TO_Y = {
     50: 12,  # "building"
     51: 13,  # "fence"
     52: -1,  # "other-structure" mapped to "unlabeled"
-    60: 8,   # "lane-marking" to "road"
+    60: 8,  # "lane-marking" to "road"
     70: 14,  # "vegetation"
     71: 15,  # "trunk"
     72: 16,  # "terrain"
@@ -99,6 +99,7 @@ IDS_TO_LABELS = {
     17: "pole",
     18: "traffic-sign",
 }
+
 
 class SemanticKITTI(Dataset):
     splits: ClassVar[dict[str, list[int]]] = dict(
@@ -179,6 +180,7 @@ class SemanticKITTI(Dataset):
 
         else:
             return self.index_select(idx)
+
 
 if __name__ == '__main__':
     # data.daic needs to be mounted with sshfs, this is a massive dataset!

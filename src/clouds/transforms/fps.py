@@ -15,6 +15,7 @@ try:
 except (ImportError, OSError):
     HAS_TORCH_FPSAMPLE = False
 
+
 def _fpsample_fps(
     pos: Tensor,
     n: int | None = None,
@@ -55,6 +56,7 @@ def _pyg_fps(
         random_start=not deterministic,
         batch_size=batch_size,
     )
+
 
 def fps(
     pos: Tensor,

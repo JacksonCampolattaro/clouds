@@ -18,28 +18,18 @@ def select_knn_edges(edge_index: Tensor, selection_index: Tensor) -> Tensor:
         (i.e. the node points to itself).
     """
     num_nodes = edge_index.size(0)
-    num_kept = (
-        selection_index.sum()
-        if selection_index.dtype == torch.bool
-        else selection_index.size(0)
-    )
+    num_kept = selection_index.sum() if selection_index.dtype == torch.bool else selection_index.size(0)
 
     # Map old node index -> new node index, -1 if the node was dropped.
-    old_to_new = torch.full(
-        (num_nodes,), -1, dtype=torch.long, device=edge_index.device
-    )
-    old_to_new[selection_index] = torch.arange(
-        num_kept, dtype=torch.long, device=edge_index.device
-    )
+    old_to_new = torch.full((num_nodes,), -1, dtype=torch.long, device=edge_index.device)
+    old_to_new[selection_index] = torch.arange(num_kept, dtype=torch.long, device=edge_index.device)
 
     # Keep only the rows for selected nodes, then remap their neighbor indices.
     kept_rows = edge_index[selection_index]  # (M, K)
     remapped = old_to_new[kept_rows]  # (M, K), -1 where neighbor was dropped
 
     # Replace dropped neighbors (-1) with a self-edge.
-    self_idx = torch.arange(
-        remapped.size(0), dtype=torch.long, device=edge_index.device
-    ).unsqueeze(1)
+    self_idx = torch.arange(remapped.size(0), dtype=torch.long, device=edge_index.device).unsqueeze(1)
     remapped = torch.where(remapped == -1, self_idx.expand_as(remapped), remapped)
 
     return remapped
@@ -55,7 +45,6 @@ class ApplySelection(BaseTransform):
     stored in dense (N, K) kNN format.
     """
 
-
     def forward(self, data: Data) -> Data:
         selection_index = data.get('selection_index')
         if not isinstance(selection_index, Tensor):
@@ -68,7 +57,7 @@ class ApplySelection(BaseTransform):
 
         for key, item in data.items():
             if key == 'edge_index':
-                assert item.size(0) == num_nodes # Only works on kNN-formatted edges
+                assert item.size(0) == num_nodes  # Only works on kNN-formatted edges
                 out[key] = select_knn_edges(item, selection_index=selection_index)
             elif 'cluster' in key or 'index' in key:
                 # Drop stale index/cluster bookkeeping fields
@@ -87,11 +76,10 @@ class ApplySelection(BaseTransform):
         if isinstance(out.batch, Tensor):
             # NOTE: assumes batches are contiguous.
             counts = torch.bincount(out.batch, minlength=data.batch_size)
-            out.ptr = torch.cat(
-                [torch.tensor([0], device=out.batch.device), torch.cumsum(counts, dim=0)]
-            )
+            out.ptr = torch.cat([torch.tensor([0], device=out.batch.device), torch.cumsum(counts, dim=0)])
 
         del out.selection_index
         return out
+
 
 apply_selection = ApplySelection()
