@@ -1,3 +1,4 @@
+import warnings
 from functools import lru_cache
 
 import torch
@@ -51,8 +52,9 @@ def _keops_knn(
     k: int = 20,
     query_pos: Tensor | None = None,
     query_batch: Tensor | None = None,
+    return_distances: bool = False,
     **kwargs,
-) -> Tensor:
+) -> Tensor | tuple[Tensor, Tensor]:
 
     query_pos = pos if query_pos is None else query_pos
     query_batch = batch if query_batch is None else query_batch
@@ -62,7 +64,11 @@ def _keops_knn(
     if batch is not None:
         d_ij.ranges = _diagonal_ranges(query_batch, batch)
     indices = d_ij.argKmin(k, dim=1, **kwargs).long()
-    return indices
+    if return_distances:
+        distances = torch.linalg.vector_norm(query_pos[:, None, :] - pos[indices, :], dim=-1)
+        return (distances, indices)
+    else:
+        return indices
 
 
 @lru_cache(maxsize=4)
@@ -77,14 +83,16 @@ def _nanoflann_knn(
     k: int = 20,
     query_pos: Tensor | None = None,
     num_threads: int = 4,
+    return_distances: bool = False,
 ) -> Tensor:
     kdtree = _cached_kdtree(pos)
-    _distances, indices = kdtree.kneighbors(
+    distances, indices = kdtree.kneighbors(
         query_pos.numpy(),
         n_neighbors=k,
         n_jobs=num_threads,
     )
-    return torch.from_numpy(indices).long()
+    indices = torch.from_numpy(indices).long()
+    return (torch.from_numpy(distances), indices) if return_distances else indices
 
 
 def knn(
@@ -94,7 +102,8 @@ def knn(
     query_pos: Tensor | None = None,
     query_batch: Tensor | None = None,
     num_threads: int = 4,
-) -> Tensor:
+    return_distances: bool = False,
+) -> Tensor | tuple[Tensor, Tensor]:
 
     query_pos = pos if query_pos is None else query_pos
     query_batch = batch if query_batch is None else query_batch
@@ -112,6 +121,7 @@ def knn(
             batch=batch,
             query_pos=query_pos,
             query_batch=query_batch,
+            return_distances=return_distances,
         )
     elif batch is None and HAS_NANOFLANN:
         return _nanoflann_knn(
@@ -119,16 +129,23 @@ def knn(
             k=k,
             query_pos=query_pos,
             num_threads=num_threads,
+            return_distances=return_distances,
         )
     else:
-        return _pyg_knn(
+        warnings.warn("Falling back to PyG's knn query, performance may be poor", stacklevel=2)
+        indices = _pyg_knn(
             x=pos,
             y=pos if query_pos is None else query_pos,
             k=k,
             batch_x=batch,
             batch_y=batch if query_batch is None else query_batch,
             num_workers=num_threads,
-        )
+        )[1].reshape(-1, k)
+        if return_distances:
+            distances = torch.linalg.vector_norm(query_pos[:, None, :] - pos[indices, :], dim=-1)
+            return (distances, indices)
+        else:
+            return indices
 
 
 class KNNSourceGraph(BaseTransform):

@@ -1,5 +1,4 @@
 import math
-import warnings
 
 import numpy
 import torch_geometric
@@ -90,17 +89,13 @@ class FurthestPointSelect(BaseTransform):
         self.deterministic = deterministic
 
     def forward(self, data: Data) -> Data:
+        assert not isinstance(data.batch, Tensor)
         selection_size = int(data.num_nodes * self.selection_factor)
         selection_size = numpy.clip(
             selection_size,
             min=self.min_num_points,
             max=self.max_num_points,
         )
-        if data.selection_index.size(0) < self.min_num_points:
-            warnings.warn(
-                f"Too few points! ({data.selection_index.size(0)} < {self.min_num_points})",
-                stacklevel=2,
-            )
 
         data.selection_index = fps(
             data.pos,
