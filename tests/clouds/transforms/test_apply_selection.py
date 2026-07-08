@@ -1,6 +1,6 @@
 import pytest
 import torch
-from torch_geometric.data import Data
+from torch_geometric.data import Data, Batch
 
 from clouds.transforms.apply_selection import ApplySelection, select_knn_edges
 
@@ -103,6 +103,7 @@ def make_data():
         if with_batch:
             data.batch = torch.zeros(num_nodes, dtype=torch.long)
             data.ptr = torch.tensor([0, num_nodes])
+            return Batch(data)
 
         return data
 

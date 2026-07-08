@@ -21,10 +21,12 @@ dev = [
     "pynanoflann>=0.10.0",
     "pytest>=9.1.1",
     "torch-fpsample",
+    "vpsample",
 ]
 
 [tool.uv.sources]
 torch-fpsample = { git = "https://github.com/leonardodalinky/pytorch_fpsample", rev = "be93a08" }
+vpsample = { git = "https://github.com/JacksonCampolattaro/vpsample.git", rev = "ea81ebf" }
 
 [build-system]
 requires = ["uv_build>=0.11,<0.12"]

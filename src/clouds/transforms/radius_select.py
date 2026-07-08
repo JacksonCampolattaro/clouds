@@ -45,6 +45,7 @@ class RadiusSelect(BaseTransform):
         distances = torch.linalg.vector_norm(pos - center, dim=-1)
         data.selection_index = distances.argsort()[:num_points]
         if not self.sort_by_distance:
+            # TODO: pyg's index_sort should be faster here!
             data.selection_index, _ = data.selection_index.sort()
 
         # If a maximum radius is specified, drop points outside
