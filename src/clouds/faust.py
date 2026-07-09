@@ -82,7 +82,6 @@ class FAUSTRemeshed(InMemoryDataset):
             os.rename(os.path.join(self.root, 'OFF'), self.raw_dir)
 
     def process(self):
-
         data_list = []
         for path in self.raw_paths:
             data = read_off(path)

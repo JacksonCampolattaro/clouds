@@ -55,7 +55,6 @@ def _keops_knn(
     return_distances: bool = False,
     **kwargs,
 ) -> Tensor | tuple[Tensor, Tensor]:
-
     query_pos = pos if query_pos is None else query_pos
     query_batch = batch if query_batch is None else query_batch
     p_i = LazyTensor(pos.float().unsqueeze(-3))
@@ -104,7 +103,6 @@ def knn(
     num_threads: int = 4,
     return_distances: bool = False,
 ) -> Tensor | tuple[Tensor, Tensor]:
-
     query_pos = pos if query_pos is None else query_pos
     query_batch = batch if query_batch is None else query_batch
 

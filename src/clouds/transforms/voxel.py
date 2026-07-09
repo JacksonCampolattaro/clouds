@@ -2,7 +2,6 @@ import random
 
 import torch
 from torch import Tensor
-from torch_geometric import Index
 from torch_geometric.data import Data
 from torch_geometric.nn import voxel_grid
 from torch_geometric.transforms import BaseTransform, Compose
@@ -13,7 +12,7 @@ from .cluster import ClusterSelect
 try:
     WITH_VPSAMPLE = True
     from vpsample import voxel_subsample
-except ImportError:
+except (ImportError, RuntimeError):
     WITH_VPSAMPLE = False
 
 

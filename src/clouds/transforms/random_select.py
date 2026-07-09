@@ -25,9 +25,7 @@ class RandomSelect(BaseTransform):
         self.replacement = replacement
 
     def forward(self, data: Data) -> Data:
-
         def _selection_size(n: int):
-
             selection_factor = (
                 random.uniform(*self.selection_factor)  #
                 if isinstance(self.selection_factor, tuple)
