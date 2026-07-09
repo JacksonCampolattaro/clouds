@@ -5,6 +5,7 @@ from torch_geometric.transforms import BaseTransform
 from torch_geometric.utils._scatter import scatter_argmax
 
 from clouds.transforms.apply_selection import apply_selection
+from clouds.transforms.knn import knn
 
 
 def _select_random_node_per_cluster(cluster: Tensor) -> Tensor:
@@ -59,3 +60,15 @@ class ClusterSelect(BaseTransform):
 class ClusterSample(ClusterSelect):
     def forward(data: Data) -> Data:
         return apply_selection(super().forward(data))
+
+
+class NearestSelectionCluster(BaseTransform):
+    def forward(self, data: Data) -> Data:
+        data.cluster = knn(
+            pos=data.pos[data.selection_index],
+            batch=data.batch[data.selection_index] if isinstance(data.batch, Tensor) else None,
+            query_pos=data.pos,
+            query_batch=data.batch,
+            k=1,
+        )
+        return data

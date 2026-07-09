@@ -19,7 +19,7 @@ class RandomColorAutoContrast(BaseTransform):
 
         colmin = data.color.amin(dim=0, keepdim=True)
         colmax = data.color.amax(dim=0, keepdim=True)
-        scale = 1 / (1e-7 + colmax - colmin) 
+        scale = 1 / (1e-7 + colmax - colmin)
         alpha = self.blend_factor or random.random()
         data.color = (1 - alpha + alpha * scale) * data.color - alpha * colmin * scale
 
@@ -27,4 +27,3 @@ class RandomColorAutoContrast(BaseTransform):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(p={self.p})"
-
