@@ -60,6 +60,7 @@ class SemanticNuScenes(Dataset):
         transform: Callable | None = None,
         log: bool = True,
         mix3d_p: float = 0,
+        **kwargs,
     ):
         super().__init__(root, transform=transform, log=log)
         self.mix3d_p = mix3d_p if 'train' in split else 0
