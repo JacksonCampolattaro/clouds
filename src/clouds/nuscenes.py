@@ -69,10 +69,10 @@ class SemanticNuScenes(Dataset):
         if 'train' in split:
             with open(self.processed_paths[0], 'rb') as f:
                 self.data_list.extend(pickle.load(f))
-        if 'val' in split:
+        if 'val' in split or 'test' in split:
             with open(self.processed_paths[1], 'rb') as f:
                 self.data_list.extend(pickle.load(f))
-        if 'test' in split:
+        if 'pred' in split:
             with open(self.processed_paths[2], 'rb') as f:
                 self.data_list.extend(pickle.load(f))
 
