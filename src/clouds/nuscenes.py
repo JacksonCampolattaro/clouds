@@ -1,12 +1,15 @@
 import os
 import pickle
+import random
 import sys
-from typing import Callable
+from typing import Callable, Union
 
 import numpy as np
 import torch
+from torch import Tensor
 from torch_geometric.data import Data, Dataset, download_url, extract_tar
 from torch_geometric.data.data import BaseData
+from torch_geometric.data.dataset import IndexType
 
 # Adapted from:
 # https://github.com/VisualComputingInstitute/ditr/blob/main/pointcept/datasets/nuscenes.py
@@ -45,7 +48,7 @@ ID_TO_Y = {
     31: -1,
 }
 
-ID_TO_Y_LUT = torch.arange(max(ID_TO_Y.keys()) + 1, dtype=torch.long)
+ID_TO_Y_LUT = torch.full((max(ID_TO_Y.keys()) + 1,), -1, dtype=torch.long)
 for id, y in ID_TO_Y.items():
     ID_TO_Y_LUT[id] = y
 
@@ -102,16 +105,36 @@ class SemanticNuScenes(Dataset):
         lidar_path = os.path.join(self.raw_dir, info['lidar_path'])
 
         lidar_data = torch.from_numpy(np.fromfile(lidar_path, dtype=np.float32).reshape(-1, 5))
-        data = Data(pos=lidar_data[:, :3], intensity=lidar_data[:, 3:4] / 255)
+        pos, intensity = lidar_data[:, :3], lidar_data[:, 3:4] / 255
 
         if label_file := info.get('gt_segment_path', None):
             label_path = os.path.join(self.raw_dir, label_file)
             ids = torch.from_numpy(np.fromfile(label_path, dtype=np.uint8)).long()
-            data.y = ID_TO_Y_LUT[ids]
+            y = ID_TO_Y_LUT[ids]
         else:
-            data.y = torch.full((data.pos.size(0),), -1, dtype=torch.long)
+            y = torch.full((pos.size(0),), -1, dtype=torch.long)
 
-        return data
+        return Data(pos=pos, intensity=intensity, y=y)
+
+    def __getitem__(self, idx: Union[int, np.integer, IndexType]) -> Union['Dataset', BaseData]:
+        if (
+            isinstance(idx, (int, np.integer))
+            or (isinstance(idx, Tensor) and idx.dim() == 0)
+            or (isinstance(idx, np.ndarray) and np.isscalar(idx))
+        ):
+            data = self.get(self.indices()[idx])
+
+            if random.random() < self.mix3d_p:
+                aug_data = self.get(random.choice(self.indices()))
+                data.pos = torch.cat([data.pos, aug_data.pos], dim=0)
+                data.intensity = torch.cat([data.intensity, aug_data.intensity], dim=0)
+                data.y = torch.cat([data.y, aug_data.y], dim=0)
+
+            data = data if self.transform is None else self.transform(data)
+            return data
+
+        else:
+            return self.index_select(idx)
 
 if __name__ == '__main__':
     root = os.path.join(os.path.realpath(sys.argv[1]), 'SemanticNuScenes')
