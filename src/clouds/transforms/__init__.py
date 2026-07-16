@@ -22,6 +22,7 @@ from .random_affine import RandomRotate as RandomRotate
 from .random_affine import RandomScale as RandomScale
 from .random_affine import RandomScaleAndRotate as RandomScaleAndRotate
 from .random_jitter import RandomJitter as RandomJitter
+from .random_select import RandomPointDropout as RandomPointDropout
 from .random_select import RandomSample as RandomSample
 from .random_select import RandomSelect as RandomSelect
 from .random_shift import RandomShift as RandomShift
