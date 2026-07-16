@@ -117,21 +117,17 @@ class _MultiThreadingDataLoaderIter(_BaseDataLoaderIter):
         """Shutdown worker threads instead of processes."""
         if not self._shutdown:
             self._shutdown = True
-            try:
-                # Signal the workers to stop
-                self._workers_done_event.set()
-                for index_queue in self._index_queues:
-                    index_queue.put(None)  # Signal termination to each worker
+            self._workers_done_event.set()
+            for index_queue in self._index_queues:
+                index_queue.put(None)  # Signal termination to each worker
 
-                # Join the worker threads
-                for worker in self._workers:
-                    worker.join()
+            # Join the worker threads
+            for worker in self._workers:
+                worker.join()
 
-                if hasattr(self, '_pin_memory_thread'):
-                    self._pin_memory_thread_done_event.set()
-                    self._pin_memory_thread.join()
-            finally:
-                pass
+            if hasattr(self, '_pin_memory_thread'):
+                self._pin_memory_thread_done_event.set()
+                self._pin_memory_thread.join()
 
     def _try_put_index(self):
         """Tries to put the next index into a worker's queue."""

@@ -117,7 +117,7 @@ class TestRandomSelect:
         for start, end in zip([0, 5, 10], [5, 10, 15], strict=False):
             mask = (result.selection_index >= start) & (result.selection_index < end)
             count = mask.sum().item()
-            expected_per_graph = min(int(5 * 2), 100)
+            expected_per_graph = min((5 * 2), 100)
             assert count == expected_per_graph
 
     def test_forward_with_replacement_batched_uneven(self, batched_data_uneven):

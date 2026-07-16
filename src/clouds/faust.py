@@ -1,12 +1,9 @@
 import os
-import os.path as osp
-import shutil
 
 import gdown
-import rich
 import torch
 from torch import Tensor
-from torch_geometric.data import InMemoryDataset, download_url, extract_zip
+from torch_geometric.data import InMemoryDataset, extract_zip
 from torch_geometric.io import read_off
 
 # Adapted from:

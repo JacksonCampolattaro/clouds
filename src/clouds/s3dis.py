@@ -225,9 +225,11 @@ class S3DIS(InMemoryDataset):
 
 
 if __name__ == '__main__':
-    from clouds.data import ThreadingDataLoader
-    from torch_geometric.data import DataLoader
     import time
+
+    from torch_geometric.data import DataLoader
+
+    from clouds.data import ThreadingDataLoader
 
     root = os.path.realpath(os.path.join(os.path.dirname(__file__), '.data', 'S3DIS'))
     dataset = S3DIS(root=root, split='train')

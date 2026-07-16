@@ -1,6 +1,6 @@
 import pytest
 import torch
-from torch_geometric.data import Data, Batch
+from torch_geometric.data import Batch, Data
 
 from clouds.transforms.apply_selection import ApplySelection, select_knn_edges
 

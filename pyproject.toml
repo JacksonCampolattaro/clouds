@@ -46,7 +46,7 @@ select = [
     "SIM", # simplify
 ]
 exclude = [
-    "UP", # pyupgrade is currently incompatible with PyG's reflection
+    # "UP", # pyupgrade is currently incompatible with PyG's reflection
     "Q", # I have my own preferences for quotes
 ]
 
