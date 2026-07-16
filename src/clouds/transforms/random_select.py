@@ -90,3 +90,21 @@ class RandomSelect(BaseTransform):
 class RandomSample(RandomSelect):
     def forward(self, data: Data) -> Data:
         return apply_selection(super().forward(data))
+
+
+class RandomPointDropout(BaseTransform):
+    def __init__(self, max_dropout=0.9, p: float = 1.0):
+        super().__init__()
+        self.max_dropout = max_dropout
+        self.p = p
+
+    def forward(self, data: Data) -> Data:
+        if self.p != 1 and random.random() > self.p:
+            return data
+
+        keep_ratio = 1.0 - (torch.rand(1, device=data.pos.device) * self.max_dropout)
+
+        return RandomSample(selection_factor=keep_ratio)(data)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(<{self.max_dropout}, p={self.p})"

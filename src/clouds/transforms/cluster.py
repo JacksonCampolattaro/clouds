@@ -58,7 +58,7 @@ class ClusterSelect(BaseTransform):
 
 
 class ClusterSample(ClusterSelect):
-    def forward(data: Data) -> Data:
+    def forward(self, data: Data) -> Data:
         return apply_selection(super().forward(data))
 
 
