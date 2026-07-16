@@ -1,5 +1,6 @@
 import pytest
 import torch
+from torch_geometric.typing import WITH_FPS as HAS_PYG_FPS
 
 from clouds.transforms.fps import HAS_TORCH_FPSAMPLE, fps
 
@@ -228,6 +229,7 @@ class TestFPSImplementations:
         assert torch.all(result1 == result2)
 
     # Tests for PyG implementation (CPU and GPU)
+    @pytest.mark.skipif(not HAS_PYG_FPS, reason="pyg-lib not installed")
     def test_pyg_cpu(self, random_positions):
         """Test PyG FPS on CPU."""
         n = 10
@@ -242,6 +244,7 @@ class TestFPSImplementations:
         self._verify_fps_properties(result, random_positions)
         assert len(result) == n
 
+    @pytest.mark.skipif(not HAS_PYG_FPS, reason="pyg-lib not installed")
     def test_pyg_with_ratio(self, random_positions):
         """Test PyG FPS with ratio."""
         ratio = 0.2
@@ -256,6 +259,7 @@ class TestFPSImplementations:
         expected_n = int(ratio * len(random_positions))
         assert len(result) == expected_n
 
+    @pytest.mark.skipif(not HAS_PYG_FPS, reason="pyg-lib not installed")
     def test_pyg_batched(self, batched_positions):
         """Test PyG FPS with batched data."""
         positions, batch = batched_positions
@@ -277,6 +281,7 @@ class TestFPSImplementations:
         assert len(batch0_indices) == 2  # 4 points * 0.5
         assert len(batch1_indices) == 2  # 4 points * 0.5
 
+    @pytest.mark.skipif(not HAS_PYG_FPS, reason="pyg-lib not installed")
     def test_pyg_batched_with_batch_size(self, batched_positions):
         """Test PyG FPS with explicit batch_size."""
         positions, batch = batched_positions
@@ -292,6 +297,7 @@ class TestFPSImplementations:
 
         self._verify_fps_properties(result, positions)
 
+    @pytest.mark.skipif(not HAS_PYG_FPS, reason="pyg-lib not installed")
     def test_pyg_edge_cases(self, small_positions):
         """Test edge cases for PyG FPS."""
         # Test n=1
@@ -313,6 +319,7 @@ class TestFPSImplementations:
         # Should be a permutation of all indices
         assert torch.all(torch.sort(result)[0] == torch.arange(len(small_positions)))
 
+    @pytest.mark.skipif(not HAS_PYG_FPS, reason="pyg-lib not installed")
     def test_pyg_random_vs_deterministic_behavior(self, random_positions):
         """Test that random_start parameter affects results."""
         n = 10
@@ -339,6 +346,7 @@ class TestFPSImplementations:
 
     # GPU tests
     @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA not available")
+    @pytest.mark.skipif(not HAS_PYG_FPS, reason="pyg-lib not installed")
     def test_pyg_gpu(self, random_positions):
         """Test PyG FPS on GPU."""
         n = 10
@@ -380,6 +388,7 @@ class TestFPSImplementations:
         # They may differ due to different random starts, but both valid
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA not available")
+    @pytest.mark.skipif(not HAS_PYG_FPS, reason="pyg-lib not installed")
     def test_pyg_gpu_batched(self, batched_positions):
         """Test PyG FPS on GPU with batched data."""
         positions, batch = batched_positions
@@ -396,6 +405,7 @@ class TestFPSImplementations:
         self._verify_fps_properties(result.cpu(), positions)
 
     # Different dimensionality tests
+    @pytest.mark.skipif(not HAS_PYG_FPS, reason="pyg-lib not installed")
     def test_2d_positions(self):
         """Test FPS with 2D positions."""
         torch.manual_seed(42)
@@ -411,6 +421,7 @@ class TestFPSImplementations:
 
         self._verify_fps_properties(result, positions)
 
+    @pytest.mark.skipif(not HAS_PYG_FPS, reason="pyg-lib not installed")
     def test_high_dimensional_positions(self):
         """Test FPS with high-dimensional positions."""
         torch.manual_seed(42)
@@ -427,6 +438,7 @@ class TestFPSImplementations:
         self._verify_fps_properties(result, positions)
 
     # Tests for reproducibility
+    @pytest.mark.skipif(not HAS_PYG_FPS, reason="pyg-lib not installed")
     def test_reproducibility_cpu(self, random_positions):
         """Test that FPS results are reproducible with fixed seed."""
         torch.manual_seed(42)

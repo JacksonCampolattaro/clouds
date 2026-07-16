@@ -1,6 +1,7 @@
 import pytest
 import torch
 from torch_geometric.data import Data
+from torch_geometric.typing import WITH_KNN as HAS_PYG_KNN
 
 from clouds.transforms.ball import BallGraph
 
@@ -67,6 +68,7 @@ class TestBallGraph:
         assert torch.allclose(original_pos, result.pos)
         assert result.pos.shape == simple_data.pos.shape
 
+    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
     def test_forward_with_batch(self):
         """Test forward pass with batch information."""
         pos = torch.tensor(

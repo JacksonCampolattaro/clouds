@@ -1,11 +1,10 @@
 import random
 
-import numpy as np
 import pytest
 import torch
 from torch_geometric.data import Batch, Data
+from torch_geometric.typing import WITH_GRID_CLUSTER as HAS_PYG_GRID_CLUSTER
 
-from clouds.transforms.cluster import ClusterSelect
 from clouds.transforms.voxel import VoxelCluster, VoxelSelect
 
 
@@ -55,6 +54,7 @@ def sample_data_gpu(sample_data):
 class TestVoxelCluster:
     """Tests for VoxelCluster class."""
 
+    @pytest.mark.skipif(not HAS_PYG_GRID_CLUSTER, reason="pyg grid clustering not installed")
     def test_forward_single_batch(self, sample_data):
         """Test forward pass with single batch."""
         transform = VoxelCluster(voxel_size=1.0)
@@ -71,6 +71,7 @@ class TestVoxelCluster:
         # Check that data is sorted by cluster
         assert torch.all(data.cluster[:-1] <= data.cluster[1:])
 
+    @pytest.mark.skipif(not HAS_PYG_GRID_CLUSTER, reason="pyg grid clustering not installed")
     def test_forward_multiple_batches(self, sample_data_multi_batch):
         """Test forward pass with multiple batches."""
         transform = VoxelCluster(voxel_size=1.0)
@@ -90,6 +91,7 @@ class TestVoxelCluster:
             batch_clusters = data.cluster[mask]
             assert len(torch.unique(batch_clusters)) > 0
 
+    @pytest.mark.skipif(not HAS_PYG_GRID_CLUSTER, reason="pyg grid clustering not installed")
     def test_random_voxel_size_tuple(self, sample_data):
         """Test that tuple voxel size produces random values."""
         transform = VoxelCluster(voxel_size=(0.1, 0.5))

@@ -1,5 +1,6 @@
 import pytest
 import torch
+from torch_geometric.typing import WITH_KNN as HAS_PYG_KNN
 
 from clouds.transforms.knn import HAS_KEOPS, HAS_NANOFLANN, knn
 
@@ -58,6 +59,7 @@ class TestKNNImplementations:
         assert torch.allclose(sorted1, sorted2), "Results differ"
 
     # CPU tests with PyG implementation as baseline
+    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
     def test_pyg_vs_keops_cpu_small(self, small_positions):
         """Test PyG vs KeOps on CPU with small data."""
         if not HAS_KEOPS:
@@ -79,6 +81,7 @@ class TestKNNImplementations:
         self._compare_knn_results(pyg_result, keops_result)
 
     @pytest.mark.skipif(not HAS_KEOPS, reason="KeOps not installed")
+    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
     def test_pyg_vs_keops_random(self, random_positions):
         """Test PyG vs KeOps on random data."""
         k = 5
@@ -95,6 +98,7 @@ class TestKNNImplementations:
         self._compare_knn_results(pyg_result, keops_result)
 
     @pytest.mark.skipif(not HAS_KEOPS, reason="KeOps not installed")
+    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
     def test_pyg_vs_keops_query_positions(self, random_positions):
         """Test with different query and reference positions."""
         torch.manual_seed(123)
@@ -116,6 +120,7 @@ class TestKNNImplementations:
         self._compare_knn_results(pyg_result, keops_result)
 
     @pytest.mark.skipif(not HAS_KEOPS, reason="KeOps not installed")
+    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
     def test_pyg_vs_keops_batched(self, batched_positions):
         """Test with batched data."""
         positions, batch = batched_positions
@@ -136,6 +141,7 @@ class TestKNNImplementations:
         self._compare_knn_results(pyg_result, keops_result)
 
     @pytest.mark.skipif(not HAS_KEOPS, reason="KeOps not installed")
+    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
     def test_keops_batched_query(self, batched_positions):
         """Test batched with different query positions."""
         positions, batch = batched_positions
@@ -163,6 +169,7 @@ class TestKNNImplementations:
 
     # Tests for NanoFlann
     @pytest.mark.skipif(not HAS_NANOFLANN, reason="NanoFlann not installed")
+    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
     def test_pyg_vs_nanoflann_small(self, small_positions):
         """Test PyG vs NanoFlann on small data."""
         k = 3
@@ -179,6 +186,7 @@ class TestKNNImplementations:
         self._compare_knn_results(pyg_result, nanoflann_result)
 
     @pytest.mark.skipif(not HAS_NANOFLANN, reason="NanoFlann not installed")
+    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
     def test_pyg_vs_nanoflann_random(self, random_positions):
         """Test PyG vs NanoFlann on random data."""
         k = 5

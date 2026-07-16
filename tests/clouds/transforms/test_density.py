@@ -1,6 +1,7 @@
 import pytest
 import torch
 from torch_geometric.data import Batch, Data
+from torch_geometric.typing import WITH_KNN as HAS_PYG_KNN
 
 from clouds.transforms.density import EstimateDensity, InverseDensitySelect
 
@@ -45,6 +46,7 @@ class TestEstimateDensity:
         # Density values should be positive
         assert (result.density > 0).all()
 
+    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
     def test_forward_pooled(self):
         # Create batched point cloud data
         pos1 = torch.randn(50, 3)
@@ -63,6 +65,7 @@ class TestEstimateDensity:
         assert result.density.size(0) == 2
         assert (result.density > 0).all()
 
+    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
     def test_forward_with_batch(self):
         # Test with explicit batch and ptr
         pos = torch.randn(80, 3)

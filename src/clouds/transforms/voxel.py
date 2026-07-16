@@ -10,10 +10,10 @@ from .apply_selection import apply_selection
 from .cluster import ClusterSelect
 
 try:
-    WITH_VPSAMPLE = True
+    HAS_VPSAMPLE = True
     from vpsample import voxel_subsample
 except (ImportError, RuntimeError):
-    WITH_VPSAMPLE = False
+    HAS_VPSAMPLE = False
 
 
 class VoxelCluster(BaseTransform):
@@ -81,7 +81,7 @@ class VoxelSelect(BaseTransform):
             return self.voxel_size
 
         # Apply subsampling
-        if data.pos.is_cpu and not isinstance(data.batch, Tensor) and WITH_VPSAMPLE:
+        if data.pos.is_cpu and not isinstance(data.batch, Tensor) and HAS_VPSAMPLE:
             data.selection_index = voxel_subsample(
                 data.pos,
                 voxel_size=get_voxel_size(),
