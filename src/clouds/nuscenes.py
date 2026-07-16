@@ -110,6 +110,7 @@ class SemanticNuScenes(Dataset):
         if label_file := info.get('gt_segment_path', None):
             label_path = os.path.join(self.raw_dir, label_file)
             ids = torch.from_numpy(np.fromfile(label_path, dtype=np.uint8)).long()
+            assert ids.max() < ID_TO_Y_LUT.size(0)
             y = ID_TO_Y_LUT[ids]
         else:
             y = torch.full((pos.size(0),), -1, dtype=torch.long)
@@ -136,9 +137,11 @@ class SemanticNuScenes(Dataset):
         else:
             return self.index_select(idx)
 
+
 if __name__ == '__main__':
     root = os.path.join(os.path.realpath(sys.argv[1]), 'SemanticNuScenes')
     print(root)
-    dataset = SemanticNuScenes(root=root, split='train')
+    dataset = SemanticNuScenes(root=root, split='val')
     print(len(dataset))
-    print(dataset.get(0))
+    for i in range(len(dataset)):
+        print(dataset.get(i))
