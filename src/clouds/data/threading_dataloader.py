@@ -5,8 +5,8 @@ import threading
 import torch
 import torch.utils.data._utils as _utils
 from torch._utils import ExceptionWrapper
-from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import _BaseDataLoaderIter
+from torch_geometric.loader.dataloader import DataLoader
 
 
 class _ThreadCompatQueue(queue.Queue):

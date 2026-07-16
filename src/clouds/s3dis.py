@@ -225,7 +225,20 @@ class S3DIS(InMemoryDataset):
 
 
 if __name__ == '__main__':
-    root = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data', 'S3DIS'))
+    from clouds.data import ThreadingDataLoader
+    from torch_geometric.data import DataLoader
+    import time
+
+    root = os.path.realpath(os.path.join(os.path.dirname(__file__), '.data', 'S3DIS'))
     dataset = S3DIS(root=root, split='train')
     print(len(dataset))
     print(dataset.get(0))
+    a = time.time()
+    for _ in ThreadingDataLoader(dataset, batch_size=8, num_workers=20):
+        pass
+    b = time.time()
+    print(b - a)
+    for _ in DataLoader(dataset, batch_size=8, num_workers=20):
+        pass
+    c = time.time()
+    print(c - b)
