@@ -156,14 +156,14 @@ class RandomRotate(BaseTransform):
 
     def __init__(
         self,
-        degrees: tuple[float, float] | float = 360.0,
+        degrees: tuple[float, float] | list[float] | float = 360.0,
         axis: int | list[int] = 2,
         correct_norm: bool = True,
         p: float = 1.0,
     ) -> None:
         super().__init__()
 
-        self.degrees = degrees if isinstance(degrees, tuple) else (-abs(degrees), abs(degrees))
+        self.degrees = degrees if isinstance(degrees, (tuple, list)) else (-abs(degrees), abs(degrees))
         self.axis = axis if isinstance(axis, list) else [axis]
         self.correct_norm = correct_norm
         self.p = p
