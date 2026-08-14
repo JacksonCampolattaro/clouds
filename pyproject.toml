@@ -13,10 +13,12 @@ dependencies = [
     "gdown>=5.2.0",
     "h5py==3.14.0",
     "rich>=14.2.0",
+    "tfrecord>=1.14.6",
 ]
 
 [dependency-groups]
 dev = [
+    "polyscope>=2.6.1",
     "pykeops>=2.3",
     "pynanoflann>=0.10.0",
     "pytest>=9.1.1",

@@ -127,6 +127,7 @@ class SemanticKITTI(Dataset):
             if split_name in split:
                 sequences += split_seq
 
+        # FIXME: should this be named _indices?
         self._samples = []
         for seq in sequences:
             seq_dir = os.path.join(self.root, 'dataset', 'sequences', f'{seq:02d}')
