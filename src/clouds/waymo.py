@@ -1,8 +1,8 @@
 import glob
-import itertools
 import io
 import json
 import os
+import random
 import sys
 import urllib
 import zipfile
@@ -14,7 +14,7 @@ import torch
 from rich import print, progress
 from tfrecord import tfrecord_iterator
 from torch import Tensor
-from torch_geometric.data import Dataset
+from torch_geometric.data import Data, Dataset
 from torch_geometric.data.data import BaseData, Data
 from torch_geometric.data.dataset import IndexType
 
@@ -65,8 +65,6 @@ def _compute_inclination(inclination_min, inclination_max, height):
 def _range_image_to_point_image(range_image, extrinsic, inclination, pixel_pose=None, frame_pose=None):
     depth_image = range_image[..., 0]
     height, width = depth_image.shape  # FIXME: range image has batch dim first?
-    # extrinsic = extrinsic.reshape(-1, 4, 4)
-    # inclination = inclination.reshape(-1, height)
 
     az_correction = torch.arctan2(extrinsic[1, 0], extrinsic[0, 0])
     ratios = (torch.arange(width, 0, -1).to(dtype=torch.float) - 0.5) / width
@@ -125,21 +123,46 @@ class SemanticWaymo(Dataset):
         mix3d_p: float = 0,
         **kwargs,
     ):
-        super().__init__(root, transform=transform, log=log)
+        super().__init__(root, transform=transform, log=log, **kwargs)
         self.mix3d_p = mix3d_p if 'train' in split else 0
 
-        split_dirs = []
+        # Identify relevant data
+        splits = torch.load(self.processed_paths[0], weights_only=False)
+        self._data = []
         if 'train' in split:
-            split_dirs.append('training')
+            self._data.extend(splits['training'])
         if 'val' in split:
-            split_dirs.append('validation')
-        if 'test' in split:
-            split_dirs.append('testing')
+            self._data.extend(splits['validation'])
+        if 'test' in split or 'pred' in split:
+            self._data.extend(splits['testing'])
 
-        self.data_list = []
-        for split_dir in split_dirs:
-            self.data_list += glob.glob(os.path.join(self.processed_dir, split_dir, '*.tfrecord'))
+    def len(self):
+        return len(self._data)
 
+    def get(self, idx: int) -> BaseData:
+        frame_id = self._data[idx]
+        data = torch.load(os.path.join(self.processed_dir, f'{frame_id}.pt'), weights_only=False)
+        return data
+
+    def __getitem__(self, idx: Union[int, np.integer, IndexType]) -> Union['Dataset', BaseData]:
+        if (
+            isinstance(idx, (int, np.integer))
+            or (isinstance(idx, Tensor) and idx.dim() == 0)
+            or (isinstance(idx, np.ndarray) and np.isscalar(idx))
+        ):
+            data = self.get(self.indices()[idx])
+
+            if random.random() < self.mix3d_p:
+                aug_data = self.get(random.choice(self.indices()))
+                data.pos = torch.cat([data.pos, aug_data.pos], dim=0)
+                data.intensity = torch.cat([data.intensity, aug_data.intensity], dim=0)
+                data.y = torch.cat([data.y, aug_data.y], dim=0)
+
+            data = data if self.transform is None else self.transform(data)
+            return data
+
+        else:
+            return self.index_select(idx)
 
 
     def download(self):
@@ -222,7 +245,7 @@ class SemanticWaymo(Dataset):
                 # TODO: where do normals come from?
 
             # Flatten images
-            points, labels = [], []
+            points, intensities, labels = [], [], []
             for r in [0, 1]:
                 for c in frame.context.laser_calibrations:
 
@@ -232,13 +255,15 @@ class SemanticWaymo(Dataset):
                     # Flatten points
                     points.append(point_images[c.name][r].reshape(-1, 3)[mask.flatten(), :])
 
+                    # Extract intensity
+                    intensities.append(range_images[c.name][r][..., 1].reshape(-1, 1)[mask.flatten(), :])
+
                     # Flatten labels (if present)
                     if not label_images:
                         pass
                     elif c.name in label_images:
-                        labels.append(label_images[c.name][r].reshape(-1, 2)[mask.flatten(), :])
+                        labels.append(label_images[c.name][r].reshape(-1, 2)[mask.flatten(), :] - 1)
                     else:
-                        # FIXME: fallback?
                         labels.append(torch.full((mask.sum(), 2), -1, dtype=torch.int32))
 
                     # TODO: produce normals, intensity, etc.
@@ -247,48 +272,40 @@ class SemanticWaymo(Dataset):
             # Flatten everything into a single point cloud
             return Data(
                 pos=torch.cat(points, dim=0)[:, [0, 2, 1]],
-                y=torch.cat(labels, dim=0) if labels else None,
+                intensity=torch.cat(intensities, dim=0),
+                y=torch.cat(labels, dim=0)[:, 1] if labels else None,
             )
 
-        # filenames = reversed(glob.glob(os.path.join(self.raw_dir, '*/*.tfrecord'), recursive=True))
-        data_list = []
+        # Identify the test set
+        test_frame_ids = set(x.rstrip() for x in (open(self.raw_paths[-1], "r").readlines()))
+
+        # Identify raw data files
         filenames = list(reversed(glob.glob(os.path.join(self.raw_dir, '*/*.tfrecord'), recursive=True)))
         assert len(filenames) == 1150
-        filenames = filenames[:1]
+
+        # Collect frames
+        split_ids = dict(training=[], validation=[], testing=[])
         for f in progress.track(filenames, description="Loading Waymo data", show_speed=True):
-            print(f)
+            split = os.path.split(os.path.split(f)[0])[-1]
             for raw_record in tfrecord_iterator(f):
                 frame = Frame()
                 frame.ParseFromString(raw_record)
 
-                if len(frame.lasers[0].ri_return1.segmentation_label_compressed):
+                # Skip unlabeled frames, unless they're in the test set
+                frame_id = f'{frame.context.name},{frame.timestamp_micros}'
+                if not len(frame.lasers[0].ri_return1.segmentation_label_compressed) and frame_id not in test_frame_ids:
+                    continue
 
-                    # Extract point cloud
-                    data = _frame_to_data(frame)
-                    data_list.append(data)
+                data = _frame_to_data(frame)
 
-                    # if data.y is not None:
-                    #     import polyscope
-                    #     polyscope.init()
-                    #     c = polyscope.register_point_cloud('waymo', data.pos)
-                    #     c.add_scalar_quantity('y0', data.y[:, 0])
-                    #     c.add_scalar_quantity('y1', data.y[:, 1])
-                    #     polyscope.show()
+                if self.pre_filter is not None and not self.pre_filter(data):
+                    continue
 
-                    # Extract timestamp
-                    # TODO
+                split_ids[split].append(frame_id)
+                torch.save(data, os.path.join(self.processed_dir, f'{frame_id}.pt'))
 
-                    # Write result
-                    # TODO
+        torch.save(split_ids, os.path.join(self.processed_dir, 'splits.pt'))
 
-                    # break # FIXME: only loads one frame from each!
-
-        print(len(data_list))
-        torch.save(self.collate(data_list), self.processed_paths[-1])
-        # TODO: what format to save the data in?
-
-    def len(self) -> int:
-        return len(self.data_list)
 
     @property
     def raw_file_names(self) -> list[str]:
@@ -297,44 +314,29 @@ class SemanticWaymo(Dataset):
             'training/segment-15832924468527961_1564_160_1584_160_with_camera_labels.tfrecord',
             'validation/segment-17065833287841703_2980_000_3000_000_with_camera_labels.tfrecord',
             'testing/segment-39847154216997509_6440_000_6460_000_with_camera_labels.tfrecord',
+            '3d_semseg_test_set_frames.txt',
         ]
 
     @property
     def processed_file_names(self) -> list[str]:
-        return ['data.pt']
-
-    def get(self, idx: int) -> BaseData:
-        
-
-        frames = []
-        for raw_record in tfrecord_iterator(self.data_list[idx]):
-            frame = self._Frame()
-            frame.ParseFromString(raw_record)
-            frames.append(frame)
-        exit()
-
-        # raw_dataset = tf.data.TFRecordDataset(self.data_list[idx])
-
-        # for raw_record in raw_dataset:
-        #     example = tf.train.Example()
-        #     example.ParseFromString(raw_record.numpy())
-        #     print(example)
-
-        # exit()
-        return None
-
-    def __getitem__(self, idx: Union[int, np.integer, IndexType]) -> Union['Dataset', BaseData]:
-        
-        return None
-
+        return ['splits.pt']
 
 if __name__ == '__main__':
     root = os.path.join(os.path.realpath(sys.argv[1]), 'SemanticWaymo')
     print(root)
     dataset = SemanticWaymo(root=root, split='val')
-    print(len(dataset))
-    for i in range(len(dataset)):
-        print(dataset.get(i))
+    for i, data in enumerate(dataset):
+
+        # import polyscope
+        # polyscope.init()
+        # c = polyscope.register_point_cloud('waymo', data.pos)
+        # c.add_scalar_quantity('y', data.y)
+        # c.add_scalar_quantity('intensity', data.intensity.flatten())
+        # polyscope.show()
+
+        # Extract timestamp
+        # TODO
+        print(i, data)
 
 
 
