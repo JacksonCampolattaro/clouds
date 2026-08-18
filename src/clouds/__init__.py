@@ -1,5 +1,6 @@
 from .faust import FAUSTRemeshed as FAUSTRemeshed
 from .kitti import SemanticKITTI as SemanticKITTI
+from .kitti import SemanticWaymo as SemanticWaymo
 from .modelnet import ModelNet40 as ModelNet40
 from .modelnetc import ModelNetC as ModelNetC
 from .nuscenes import SemanticNuScenes as SemanticNuScenes

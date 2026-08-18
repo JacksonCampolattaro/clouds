@@ -334,8 +334,6 @@ if __name__ == '__main__':
         # c.add_scalar_quantity('intensity', data.intensity.flatten())
         # polyscope.show()
 
-        # Extract timestamp
-        # TODO
         print(i, data)
 
 
