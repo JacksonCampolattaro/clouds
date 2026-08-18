@@ -271,7 +271,7 @@ class SemanticWaymo(Dataset):
 
             # Flatten everything into a single point cloud
             return Data(
-                pos=torch.cat(points, dim=0)[:, [0, 2, 1]],
+                pos=torch.cat(points, dim=0),
                 intensity=torch.cat(intensities, dim=0),
                 y=torch.cat(labels, dim=0)[:, 1] if labels else None,
             )
