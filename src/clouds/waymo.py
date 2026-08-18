@@ -272,7 +272,7 @@ class SemanticWaymo(Dataset):
             # Flatten everything into a single point cloud
             return Data(
                 pos=torch.cat(points, dim=0),
-                intensity=torch.cat(intensities, dim=0),
+                intensity=torch.cat(intensities, dim=0).tanh(),
                 y=torch.cat(labels, dim=0)[:, 1] if labels else None,
             )
 
@@ -327,12 +327,13 @@ if __name__ == '__main__':
     dataset = SemanticWaymo(root=root, split='val')
     for i, data in enumerate(dataset):
 
-        # import polyscope
-        # polyscope.init()
-        # c = polyscope.register_point_cloud('waymo', data.pos)
-        # c.add_scalar_quantity('y', data.y)
-        # c.add_scalar_quantity('intensity', data.intensity.flatten())
-        # polyscope.show()
+        import polyscope
+        polyscope.init()
+        polyscope.set_up_dir('z_up')
+        c = polyscope.register_point_cloud('waymo', data.pos)
+        c.add_scalar_quantity('y', data.y)
+        c.add_scalar_quantity('intensity', data.intensity.flatten())
+        polyscope.show()
 
         print(i, data)
 
