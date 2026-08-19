@@ -1,14 +1,13 @@
 import glob
 import io
 import json
+import multiprocessing
 import os
 import random
 import sys
 import urllib
 import zipfile
 import zlib
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import multiprocessing
 from typing import Callable, ClassVar, Union
 
 import numpy as np
@@ -368,10 +367,16 @@ class SemanticWaymo(Dataset):
 
 if __name__ == '__main__':
     root = os.path.join(os.path.realpath(sys.argv[1]), 'SemanticWaymo')
-    print(root)
     dataset = SemanticWaymo(root=root, split='val')
+    import polyscope
+    from clouds.show import show_data, register_pyg_data, render_data
+
     for data in progress.track(dataset):
-        print(data)
+        show_data(data)
+
+        register_pyg_data(data)
+        render_data("out.png", data)
+
     # for i, data in enumerate(dataset):
 
     #     # import polyscope
