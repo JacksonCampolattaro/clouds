@@ -12,7 +12,7 @@ from typing import Callable, ClassVar, Union
 
 import numpy as np
 import torch
-from rich import print, progress
+from rich import progress
 from rich.progress import Progress
 from tfrecord import tfrecord_iterator
 from torch import Tensor
@@ -367,15 +367,14 @@ class SemanticWaymo(Dataset):
 
 if __name__ == '__main__':
     root = os.path.join(os.path.realpath(sys.argv[1]), 'SemanticWaymo')
-    dataset = SemanticWaymo(root=root, split='val')
-    import polyscope
-    from clouds.show import show_data, register_pyg_data, render_data
+    dataset = SemanticWaymo(root=root, split='train')
+    from clouds.show import show_data
+    import random
+    # dataset._data = random.shuffle(dataset._data)
 
     for data in progress.track(dataset):
-        show_data(data)
-
-        register_pyg_data(data)
-        render_data("out.png", data)
+        pass
+        # show_data(data)
 
     # for i, data in enumerate(dataset):
 

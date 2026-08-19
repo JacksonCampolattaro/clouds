@@ -4,7 +4,7 @@ from functools import lru_cache
 import torch
 from torch import Tensor
 from torch_geometric.data import Data
-from torch_geometric.nn.pool import knn as _pyg_knn
+from torch_geometric.nn import pool
 from torch_geometric.transforms import BaseTransform
 
 from clouds.data import SourceIndexedData
@@ -21,6 +21,24 @@ try:
 except ImportError:
     HAS_KEOPS = False
 
+def _pyg_knn(
+    pos: Tensor,
+    batch: Tensor | None = None,
+    k: int = 20,
+    query_pos: Tensor | None = None,
+    query_batch: Tensor | None = None,
+    return_distances: bool = False,
+    **kwargs,
+) -> Tensor | tuple[Tensor, Tensor]:
+    assert not return_distances
+    return pool.knn(
+        pos,
+        query_pos if query_pos is not None else pos,
+        k=k,
+        batch_x=query_batch,
+        batch_y=query_batch,
+        num_workers=4,
+    )
 
 def _diagonal_ranges(batch_x: Tensor = None, batch_y: Tensor = None):
     """Encodes the block-diagonal structure associated to a batch vector."""

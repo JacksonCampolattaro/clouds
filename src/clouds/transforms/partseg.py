@@ -54,10 +54,11 @@ class RefinePartSegmentation(BaseTransform):
     ):
         super().__init__()
         self.k = k
+        self.replace_with_neighbors = replace_with_neighbors
         if not isinstance(categories_to_classes, Tensor):
             categories_to_classes = class_map_to_table(categories_to_classes)
         self.categories_to_classes = categories_to_classes
-        self.replace_with_neighbors = replace_with_neighbors
+        # self.register_buffer('categories_to_classes', categories_to_classes) # Valid for later PyG
 
     def forward(self, data: Data) -> Data:
         self.categories_to_classes = self.categories_to_classes.to(device=data.category.device)
@@ -69,10 +70,9 @@ class RefinePartSegmentation(BaseTransform):
                 pred_counts = global_add_pool(one_hot(preds, num_classes=store.pred.size(-1)), batch=store.batch)
 
                 # Determine which predictions should be replaced
-                rare_classes = (pred_counts > 0) & (pred_counts < self.k)
-                irrelevant_classes = (pred_counts > 0) & ~self.categories_to_classes[data.category, :]
+                rare_classes = pred_counts < self.k
+                irrelevant_classes = ~self.categories_to_classes[data.category, :]
                 bad_classes = (irrelevant_classes | rare_classes)[store.batch, :]
-
 
                 if self.replace_with_neighbors:
                     bad_preds = bad_classes.gather(1, preds.unsqueeze(1)).flatten()

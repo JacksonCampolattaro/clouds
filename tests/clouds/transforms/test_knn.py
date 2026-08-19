@@ -2,11 +2,12 @@ import pytest
 import torch
 from torch_geometric.typing import WITH_KNN as HAS_PYG_KNN
 
-from clouds.transforms.knn import HAS_KEOPS, HAS_NANOFLANN, knn
+from clouds.transforms.knn import HAS_KEOPS, HAS_NANOFLANN, knn, _pyg_knn, _keops_knn, _nanoflann_knn
 
 
 class TestKNNImplementations:
     """Test suite to verify KNN implementations produce identical results."""
+    # FIXME: this doesn't actually make any comparisons between the different backends!
 
     @pytest.fixture
     def random_positions(self):
@@ -66,14 +67,11 @@ class TestKNNImplementations:
             pytest.skip("KeOps not installed")
 
         k = 3
-        # PyG implementation
-        pyg_result = knn(
+        pyg_result = _pyg_knn(
             pos=small_positions.cpu(),
             k=k,
         )
-
-        # KeOps implementation (force CPU)
-        keops_result = knn(
+        keops_result = _keops_knn(
             pos=small_positions.cpu(),
             k=k,
         )
@@ -85,12 +83,12 @@ class TestKNNImplementations:
     def test_pyg_vs_keops_random(self, random_positions):
         """Test PyG vs KeOps on random data."""
         k = 5
-        pyg_result = knn(
+        pyg_result = _pyg_knn(
             pos=random_positions.cpu(),
             k=k,
         )
 
-        keops_result = knn(
+        keops_result = _keops_knn(
             pos=random_positions.cpu(),
             k=k,
         )
@@ -105,13 +103,13 @@ class TestKNNImplementations:
         query_pos = torch.randn(50, 3)
         k = 4
 
-        pyg_result = knn(
+        pyg_result = _pyg_knn(
             pos=random_positions.cpu(),
             query_pos=query_pos.cpu(),
             k=k,
         )
 
-        keops_result = knn(
+        keops_result = _keops_knn(
             pos=random_positions.cpu(),
             query_pos=query_pos.cpu(),
             k=k,
@@ -126,13 +124,13 @@ class TestKNNImplementations:
         positions, batch = batched_positions
         k = 3
 
-        pyg_result = knn(
+        pyg_result = _pyg_knn(
             pos=positions.cpu(),
             batch=batch.cpu(),
             k=k,
         )
 
-        keops_result = knn(
+        keops_result = _keops_knn(
             pos=positions.cpu(),
             batch=batch.cpu(),
             k=k,
@@ -149,7 +147,7 @@ class TestKNNImplementations:
         query_batch = batch[:2]
         k = 3
 
-        pyg_result = knn(
+        pyg_result = _pyg_knn(
             pos=positions.cpu(),
             query_pos=query_pos.cpu(),
             batch=batch.cpu(),
@@ -157,7 +155,7 @@ class TestKNNImplementations:
             k=k,
         )
 
-        keops_result = knn(
+        keops_result = _keops_knn(
             pos=positions.cpu(),
             query_pos=query_pos.cpu(),
             batch=batch.cpu(),
@@ -173,12 +171,12 @@ class TestKNNImplementations:
     def test_pyg_vs_nanoflann_small(self, small_positions):
         """Test PyG vs NanoFlann on small data."""
         k = 3
-        pyg_result = knn(
+        pyg_result = _pyg_knn(
             pos=small_positions.cpu(),
             k=k,
         )
 
-        nanoflann_result = knn(
+        nanoflann_result = _nanoflann_knn(
             pos=small_positions.cpu(),
             k=k,
         )
@@ -190,12 +188,12 @@ class TestKNNImplementations:
     def test_pyg_vs_nanoflann_random(self, random_positions):
         """Test PyG vs NanoFlann on random data."""
         k = 5
-        pyg_result = knn(
+        pyg_result = _pyg_knn(
             pos=random_positions.cpu(),
             k=k,
         )
 
-        nanoflann_result = knn(
+        nanoflann_result = _nanoflann_knn(
             pos=random_positions.cpu(),
             k=k,
         )
@@ -203,20 +201,21 @@ class TestKNNImplementations:
         self._compare_knn_results(pyg_result, nanoflann_result)
 
     @pytest.mark.skipif(not HAS_NANOFLANN, reason="NanoFlann not installed")
+    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
     def test_nanoflann_query_positions(self, random_positions):
         """Test NanoFlann with query positions."""
         torch.manual_seed(123)
         query_pos = torch.randn(50, 3)
         k = 4
 
-        pyg_result = knn(
-            pos=random_positions.cpu(),
+        pyg_result = _pyg_knn(
+            random_positions.cpu(),
             query_pos=query_pos.cpu(),
             k=k,
         )
 
-        nanoflann_result = knn(
-            pos=random_positions.cpu(),
+        nanoflann_result = _nanoflann_knn(
+            random_positions.cpu(),
             query_pos=query_pos.cpu(),
             k=k,
         )
@@ -244,21 +243,22 @@ class TestKNNImplementations:
 
     @pytest.mark.skipif(not HAS_NANOFLANN, reason="NanoFlann not installed")
     @pytest.mark.skipif(not HAS_KEOPS, reason="KeOps not installed")
+    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
     def test_all_implementations_match(self, random_positions):
         """Test that all three implementations produce identical results."""
         k = 4
 
-        pyg_result = knn(
+        pyg_result = _pyg_knn(
             pos=random_positions.cpu(),
             k=k,
         )
 
-        nanoflann_result = knn(
+        nanoflann_result = _nanoflann_knn(
             pos=random_positions.cpu(),
             k=k,
         )
 
-        keops_result = knn(
+        keops_result = _keops_knn(
             pos=random_positions.cpu(),
             k=k,
         )
