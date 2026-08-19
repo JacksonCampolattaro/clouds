@@ -105,17 +105,17 @@ class SemanticNuScenes(Dataset):
         lidar_path = os.path.join(self.raw_dir, info['lidar_path'])
 
         lidar_data = torch.from_numpy(np.fromfile(lidar_path, dtype=np.float32).reshape(-1, 5))
-        pos, intensity = lidar_data[:, :3], lidar_data[:, 3:4] / 255
+        data = Data(pos=lidar_data[:, :3], intensity=lidar_data[:, 3:4] / 255)
 
         if label_file := info.get('gt_segment_path', None):
             label_path = os.path.join(self.raw_dir, label_file)
             ids = torch.from_numpy(np.fromfile(label_path, dtype=np.uint8)).long()
             assert ids.max() < ID_TO_Y_LUT.size(0)
-            y = ID_TO_Y_LUT[ids]
+            data.y = ID_TO_Y_LUT[ids]
         else:
-            y = torch.full((pos.size(0),), -1, dtype=torch.long)
+            data.lidar_token = info['lidar_token']
 
-        return Data(pos=pos, intensity=intensity, y=y)
+        return data
 
     def __getitem__(self, idx: Union[int, np.integer, IndexType]) -> Union['Dataset', BaseData]:
         if (
@@ -141,7 +141,7 @@ class SemanticNuScenes(Dataset):
 if __name__ == '__main__':
     root = os.path.join(os.path.realpath(sys.argv[1]), 'SemanticNuScenes')
     print(root)
-    dataset = SemanticNuScenes(root=root, split='val')
+    dataset = SemanticNuScenes(root=root, split='pred')
     print(len(dataset))
     for i in range(len(dataset)):
         print(dataset.get(i))
