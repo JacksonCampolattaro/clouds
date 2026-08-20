@@ -208,3 +208,43 @@ class TestClusterSelect:
         transform_random = ClusterSelect(deterministic=False)
         result_random = transform_random(data)
         assert result_random.selection_index.size(0) == 1
+
+    def test_cluster_select_deterministic_non_contiguous_with_batch(self):
+        """Test with non-contiguous clusters across different batches."""
+        data = Data(
+            x=torch.randn(15, 5),
+            cluster=torch.tensor([0, 0, 3, 3, 3, 1, 1, 2, 2, 2, 2, 4, 5, 4, 5]),
+            batch=  torch.tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1]),
+        )
+
+        transform = ClusterSelect(deterministic=True, pick=1)
+        result = transform(data)
+
+        # Should select one from each of the 6 unique clusters
+        assert result.selection_index.size(0) == 6
+
+        # Check that selections are from the correct clusters
+        selected_clusters = result.cluster[result.selection_index]
+        unique_clusters, counts = torch.unique(selected_clusters, return_counts=True)
+        assert torch.all(counts == 1)
+        assert torch.all(unique_clusters == torch.tensor([0, 1, 2, 3, 4, 5]))
+
+    def test_cluster_select_random_non_contiguous_with_batch(self):
+        """Test with non-contiguous clusters across different batches."""
+        data = Data(
+            x=torch.randn(15, 5),
+            cluster=torch.tensor([0, 0, 3, 3, 3, 1, 1, 2, 2, 2, 2, 4, 5, 4, 5]),
+            batch=  torch.tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1]),
+        )
+
+        transform = ClusterSelect(deterministic=False)
+        result = transform(data)
+
+        # Should select one from each of the 6 unique clusters
+        assert result.selection_index.size(0) == 6
+
+        # Check that selections are from the correct clusters
+        selected_clusters = result.cluster[result.selection_index]
+        unique_clusters, counts = torch.unique(selected_clusters, return_counts=True)
+        assert torch.all(counts == 1)
+        assert torch.all(unique_clusters == torch.tensor([0, 1, 2, 3, 4, 5]))
