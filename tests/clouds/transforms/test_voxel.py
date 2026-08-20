@@ -68,8 +68,6 @@ class TestVoxelCluster:
         unique_clusters = torch.unique(data.cluster)
         assert unique_clusters.tolist() == list(range(len(unique_clusters)))
 
-        # Check that data is sorted by cluster
-        assert torch.all(data.cluster[:-1] <= data.cluster[1:])
 
     @pytest.mark.skipif(not HAS_PYG_GRID_CLUSTER, reason="pyg grid clustering not installed")
     def test_forward_multiple_batches(self, sample_data_multi_batch):

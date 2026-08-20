@@ -33,12 +33,7 @@ class VoxelCluster(BaseTransform):
 
         # Remap to contiguous, sequential IDs (0 .. num_clusters-1)
         unique_clusters = torch.unique(cluster)
-        cluster = torch.searchsorted(unique_clusters, cluster)
-
-        # Sort and apply selection
-        data.selection_index = selection_index = torch.argsort(cluster)
-        data = apply_selection(data)
-        data.cluster = cluster[selection_index]
+        data.cluster = torch.searchsorted(unique_clusters, cluster)
 
         return data
 
