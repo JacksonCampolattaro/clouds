@@ -17,9 +17,9 @@ def _select_random_node_per_cluster(cluster: Tensor) -> Tensor:
 
 def _select_nth_node_per_cluster(cluster: Tensor, n: int, cluster_is_sorted: bool | None = False) -> Tensor:
     """Deterministically select a point from each cluster."""
-    # FIXME: assumes clusters are in order and contiguous!
 
     if (cluster_is_sorted is None and torch.any(cluster[:-1] > cluster[1:])) or cluster_is_sorted is False:
+        # If the clusters are unsorted, sort them before performing selection
         sorted_clusters, sorted_indices = torch.sort(cluster)
         sorted_selection = _select_nth_node_per_cluster(sorted_clusters, n, cluster_is_sorted=True)
         return sorted_indices[sorted_selection]
