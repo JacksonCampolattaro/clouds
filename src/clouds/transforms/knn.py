@@ -151,19 +151,15 @@ def knn(
         )
     else:
         warnings.warn("Falling back to PyG's knn query, performance may be poor", stacklevel=2)
-        indices = _pyg_knn(
-            x=pos,
-            y=pos if query_pos is None else query_pos,
+        return _pyg_knn(
+            pos=pos,
+            batch=batch,
+            query_pos=query_pos,
+            query_batch=query_batch,
             k=k,
-            batch_x=batch,
-            batch_y=batch if query_batch is None else query_batch,
-            num_workers=num_threads,
-        )[1].reshape(-1, k)
-        if return_distances:
-            distances = torch.linalg.vector_norm(query_pos[:, None, :] - pos[indices, :], dim=-1)
-            return (distances, indices)
-        else:
-            return indices
+            num_threads=num_threads,
+            return_distances=return_distances,
+        )
 
 
 class KNNSourceGraph(BaseTransform):
