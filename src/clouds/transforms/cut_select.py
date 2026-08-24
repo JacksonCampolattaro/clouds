@@ -29,7 +29,7 @@ class CutSelect(BaseTransform):
         pos = data.pos if self.dims is None else data.pos[:, self.dims]
 
         num_points = min(int(data.num_nodes * self.max_ratio), self.max_num_points)
-        if data.num_nodes <= num_points and not math.isfinite(self.max_radius):
+        if data.num_nodes <= num_points:
             return data
 
         # Select a vector at random
