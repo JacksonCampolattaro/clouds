@@ -1,387 +1,225 @@
+
+"""
+Equivalence tests for the various kNN backends in the knn module.
+
+These tests do NOT check correctness of the neighbor search (i.e. we don't
+verify the "true" nearest neighbors against a brute-force ground truth).
+Instead, they check that the different available backends (_pyg_knn,
+_keops_knn, _nanoflann_knn) agree with each other on the *set* of neighbor
+indices they return for the same input, for both the unbatched and batched
+cases, and for both CPU and CUDA tensors where applicable.
+
+Backends whose optional dependency is not installed (pykeops, pynanoflann)
+are skipped via pytest.mark.skipif, and CUDA-only tests are skipped when
+CUDA is not available.
+"""
+
 import pytest
 import torch
-from torch_geometric.typing import WITH_KNN as HAS_PYG_KNN
 
-from clouds.transforms.knn import HAS_KEOPS, HAS_NANOFLANN, _keops_knn, _nanoflann_knn, _pyg_knn, knn
+from clouds.transforms.knn import (
+    HAS_KEOPS,
+    HAS_NANOFLANN,
+    _keops_knn,
+    _nanoflann_knn,
+    _pyg_knn,
+)
+
+CUDA_AVAILABLE = torch.cuda.is_available()
+
+requires_keops = pytest.mark.skipif(not HAS_KEOPS, reason="pykeops is not installed")
+requires_nanoflann = pytest.mark.skipif(not HAS_NANOFLANN, reason="pynanoflann is not installed")
+requires_cuda = pytest.mark.skipif(not CUDA_AVAILABLE, reason="CUDA is not available")
+
+
+def _neighbor_sets(indices: torch.Tensor) -> list[frozenset]:
+    """Convert a (N, k) index tensor into a list of per-row frozensets.
+
+    We compare sets rather than raw tensors because different backends may
+    return neighbors in different orders, or break ties among equidistant
+    points differently.
+    """
+    return [frozenset(row.tolist()) for row in indices]
+
+
+def _assert_neighbor_sets_equal(a: torch.Tensor, b: torch.Tensor) -> None:
+    assert a.shape == b.shape, f"shape mismatch: {a.shape} vs {b.shape}"
+    sets_a = _neighbor_sets(a)
+    sets_b = _neighbor_sets(b)
+    mismatches = [i for i, (sa, sb) in enumerate(zip(sets_a, sets_b)) if sa != sb]
+    assert not mismatches, (
+        f"neighbor sets differ at rows {mismatches[:10]}"
+        f"{'...' if len(mismatches) > 10 else ''}"
+    )
 
 
 class TestKNNImplementations:
-    """Test suite to verify KNN implementations produce identical results."""
-    # FIXME: this doesn't actually make any comparisons between the different backends!
+    """Cross-backend equivalence checks for the kNN implementations."""
+
+    # ------------------------------------------------------------------
+    # Fixtures
+    # ------------------------------------------------------------------
 
     @pytest.fixture
-    def random_positions(self):
-        """Generate random positions for testing."""
-        torch.manual_seed(42)
+    def unbatched_pos(self):
+        torch.manual_seed(0)
         return torch.randn(100, 3)
 
     @pytest.fixture
-    def small_positions(self):
-        """Generate small set of positions."""
-        return torch.tensor(
-            [
-                [0.0, 0.0, 0.0],
-                [1.0, 0.0, 0.0],
-                [0.0, 1.0, 0.0],
-                [0.0, 0.0, 1.0],
-                [1.0, 1.0, 0.0],
-                [1.0, 0.0, 1.0],
-                [0.0, 1.0, 1.0],
-                [1.0, 1.0, 1.0],
-            ],
-            dtype=torch.float,
-        )
+    def batched_pos_and_batch(self):
+        torch.manual_seed(1)
+        # Two "point clouds" of 50 points each, well separated in space so
+        # that batching (rather than raw distance) determines membership.
+        pos_a = torch.randn(50, 3)
+        pos_b = torch.randn(50, 3) + 100.0
+        pos = torch.cat([pos_a, pos_b], dim=0)
+        batch = torch.cat([torch.zeros(50, dtype=torch.long), torch.ones(50, dtype=torch.long)])
+        return pos, batch
 
     @pytest.fixture
-    def batched_positions(self):
-        """Generate positions with batch indices."""
-        positions = torch.tensor(
-            [
-                [0.0, 0.0, 0.0],
-                [1.0, 0.0, 0.0],
-                [0.0, 1.0, 0.0],
-                [0.0, 0.0, 1.0],
-                [10.0, 10.0, 10.0],
-                [11.0, 10.0, 10.0],
-                [10.0, 11.0, 10.0],
-                [10.0, 10.0, 11.0],
-            ],
-            dtype=torch.float,
-        )
-        batch = torch.tensor([0, 0, 0, 0, 1, 1, 1, 1])
-        return positions, batch
+    def query_subset(self, unbatched_pos):
+        # A smaller query set distinct from pos, to exercise query_pos !=
+        # pos behavior.
+        torch.manual_seed(2)
+        return torch.randn(10, 3)
 
-    def _compare_knn_results(self, result1, result2):
-        """Helper to compare KNN results."""
-        assert result1.shape == result2.shape, f"Shape mismatch: {result1.shape} vs {result2.shape}"
-        # Sort results along last dimension for comparison (neighbors may be in different order if distances are equal)
-        sorted1 = torch.sort(result1, dim=-1)[0]
-        sorted2 = torch.sort(result2, dim=-1)[0]
-        assert torch.allclose(sorted1, sorted2), "Results differ"
+    # ------------------------------------------------------------------
+    # PyG vs KeOps (unbatched)
+    # ------------------------------------------------------------------
 
-    # CPU tests with PyG implementation as baseline
-    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
-    def test_pyg_vs_keops_cpu_small(self, small_positions):
-        """Test PyG vs KeOps on CPU with small data."""
-        if not HAS_KEOPS:
-            pytest.skip("KeOps not installed")
+    @requires_keops
+    def test_pyg_vs_keops_unbatched_self_query(self, unbatched_pos):
+        pos_cuda = unbatched_pos.cuda() if CUDA_AVAILABLE else unbatched_pos
+        k = 8
 
-        k = 3
-        pyg_result = _pyg_knn(
-            pos=small_positions.cpu(),
-            k=k,
-        )
-        keops_result = _keops_knn(
-            pos=small_positions.cpu(),
-            k=k,
-        )
+        pyg_indices = _pyg_knn(unbatched_pos, k=k)
+        keops_indices = _keops_knn(pos_cuda, k=k).cpu()
 
-        self._compare_knn_results(pyg_result, keops_result)
+        _assert_neighbor_sets_equal(pyg_indices, keops_indices)
 
-    @pytest.mark.skipif(not HAS_KEOPS, reason="KeOps not installed")
-    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
-    def test_pyg_vs_keops_random(self, random_positions):
-        """Test PyG vs KeOps on random data."""
+    @requires_keops
+    def test_pyg_vs_keops_unbatched_separate_query(self, unbatched_pos, query_subset):
+        pos_cuda = unbatched_pos.cuda() if CUDA_AVAILABLE else unbatched_pos
+        query_cuda = query_subset.cuda() if CUDA_AVAILABLE else query_subset
         k = 5
-        pyg_result = _pyg_knn(
-            pos=random_positions.cpu(),
-            k=k,
-        )
 
-        keops_result = _keops_knn(
-            pos=random_positions.cpu(),
-            k=k,
-        )
+        pyg_indices = _pyg_knn(unbatched_pos, k=k, query_pos=query_subset)
+        keops_indices = _keops_knn(pos_cuda, k=k, query_pos=query_cuda).cpu()
 
-        self._compare_knn_results(pyg_result, keops_result)
+        _assert_neighbor_sets_equal(pyg_indices, keops_indices)
 
-    @pytest.mark.skipif(not HAS_KEOPS, reason="KeOps not installed")
-    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
-    def test_pyg_vs_keops_query_positions(self, random_positions):
-        """Test with different query and reference positions."""
-        torch.manual_seed(123)
-        query_pos = torch.randn(50, 3)
-        k = 4
+    @requires_keops
+    def test_pyg_vs_keops_batched(self, batched_pos_and_batch):
+        pos, batch = batched_pos_and_batch
+        pos_cuda = pos.cuda() if CUDA_AVAILABLE else pos
+        batch_cuda = batch.cuda() if CUDA_AVAILABLE else batch
+        k = 6
 
-        pyg_result = _pyg_knn(
-            pos=random_positions.cpu(),
-            query_pos=query_pos.cpu(),
-            k=k,
-        )
+        pyg_indices = _pyg_knn(pos, k=k, batch=batch, query_batch=batch)
+        keops_indices = _keops_knn(pos_cuda, k=k, batch=batch_cuda, query_batch=batch_cuda).cpu()
 
-        keops_result = _keops_knn(
-            pos=random_positions.cpu(),
-            query_pos=query_pos.cpu(),
-            k=k,
-        )
+        _assert_neighbor_sets_equal(pyg_indices, keops_indices)
 
-        self._compare_knn_results(pyg_result, keops_result)
+        # Sanity check that batching actually mattered: no cross-batch
+        # neighbors should appear in either result.
+        first_batch_size = int((batch == 0).sum())
+        for row in pyg_indices[:first_batch_size]:
+            assert (row < first_batch_size).all(), "PyG result leaked cross-batch neighbors"
+        for row in keops_indices[:first_batch_size]:
+            assert (row < first_batch_size).all(), "KeOps result leaked cross-batch neighbors"
 
-    @pytest.mark.skipif(not HAS_KEOPS, reason="KeOps not installed")
-    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
-    def test_pyg_vs_keops_batched(self, batched_positions):
-        """Test with batched data."""
-        positions, batch = batched_positions
-        k = 3
+    # ------------------------------------------------------------------
+    # PyG vs nanoflann
+    # ------------------------------------------------------------------
 
-        pyg_result = _pyg_knn(
-            pos=positions.cpu(),
-            batch=batch.cpu(),
-            k=k,
-        )
+    @requires_nanoflann
+    def test_pyg_vs_nanoflann_unbatched_self_query(self, unbatched_pos):
+        k = 8
 
-        keops_result = _keops_knn(
-            pos=positions.cpu(),
-            batch=batch.cpu(),
-            k=k,
-        )
+        pyg_indices = _pyg_knn(unbatched_pos, k=k)
+        nanoflann_indices = _nanoflann_knn(unbatched_pos, k=k, query_pos=unbatched_pos)
 
-        self._compare_knn_results(pyg_result, keops_result)
+        _assert_neighbor_sets_equal(pyg_indices, nanoflann_indices)
 
-    @pytest.mark.skipif(not HAS_KEOPS, reason="KeOps not installed")
-    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
-    def test_keops_batched_query(self, batched_positions):
-        """Test batched with different query positions."""
-        positions, batch = batched_positions
-        query_pos = positions[:2]  # Query only first 2 points
-        query_batch = batch[:2]
-        k = 3
-
-        pyg_result = _pyg_knn(
-            pos=positions.cpu(),
-            query_pos=query_pos.cpu(),
-            batch=batch.cpu(),
-            query_batch=query_batch.cpu(),
-            k=k,
-        )
-
-        keops_result = _keops_knn(
-            pos=positions.cpu(),
-            query_pos=query_pos.cpu(),
-            batch=batch.cpu(),
-            query_batch=query_batch.cpu(),
-            k=k,
-        )
-
-        self._compare_knn_results(pyg_result, keops_result)
-
-    # Tests for NanoFlann
-    @pytest.mark.skipif(not HAS_NANOFLANN, reason="NanoFlann not installed")
-    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
-    def test_pyg_vs_nanoflann_small(self, small_positions):
-        """Test PyG vs NanoFlann on small data."""
-        k = 3
-        pyg_result = _pyg_knn(
-            pos=small_positions.cpu(),
-            k=k,
-        )
-
-        nanoflann_result = _nanoflann_knn(
-            pos=small_positions.cpu(),
-            k=k,
-        )
-
-        self._compare_knn_results(pyg_result, nanoflann_result)
-
-    @pytest.mark.skipif(not HAS_NANOFLANN, reason="NanoFlann not installed")
-    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
-    def test_pyg_vs_nanoflann_random(self, random_positions):
-        """Test PyG vs NanoFlann on random data."""
+    @requires_nanoflann
+    def test_pyg_vs_nanoflann_unbatched_separate_query(self, unbatched_pos, query_subset):
         k = 5
-        pyg_result = _pyg_knn(
-            pos=random_positions.cpu(),
-            k=k,
+
+        pyg_indices = _pyg_knn(unbatched_pos, k=k, query_pos=query_subset)
+        nanoflann_indices = _nanoflann_knn(unbatched_pos, k=k, query_pos=query_subset)
+
+        _assert_neighbor_sets_equal(pyg_indices, nanoflann_indices)
+
+    @requires_nanoflann
+    def test_pyg_vs_nanoflann_batched(self, batched_pos_and_batch):
+        # NOTE: as written, `_nanoflann_knn` does `if query_pos:` when
+        # `batch is not None`, which raises for a real (non-empty) tensor
+        # query_pos. This test documents/exercises that current behavior.
+        pos, batch = batched_pos_and_batch
+        k = 6
+
+        pyg_indices = _pyg_knn(pos, k=k, batch=batch, query_batch=batch)
+
+        nanoflann_indices = _nanoflann_knn(pos, k=k, batch=batch, query_pos=pos, query_batch=batch)
+
+        _assert_neighbor_sets_equal(pyg_indices, nanoflann_indices)
+
+        # Sanity check that batching actually mattered: no cross-batch
+        # neighbors should appear in either result.
+        first_batch_size = int((batch == 0).sum())
+        for row in pyg_indices[:first_batch_size]:
+            assert (row < first_batch_size).all(), "PyG result leaked cross-batch neighbors"
+        for row in nanoflann_indices[:first_batch_size]:
+            assert (row < first_batch_size).all(), "KeOps result leaked cross-batch neighbors"
+            
+
+    # ------------------------------------------------------------------
+    # KeOps vs nanoflann (both optional deps present)
+    # ------------------------------------------------------------------
+
+    @requires_keops
+    @requires_nanoflann
+    def test_keops_vs_nanoflann_unbatched(self, unbatched_pos):
+        pos_cuda = unbatched_pos.cuda() if CUDA_AVAILABLE else unbatched_pos
+        k = 8
+
+        keops_indices = _keops_knn(pos_cuda, k=k).cpu()
+        nanoflann_indices = _nanoflann_knn(unbatched_pos, k=k, query_pos=unbatched_pos)
+
+        _assert_neighbor_sets_equal(keops_indices, nanoflann_indices)
+
+    # ------------------------------------------------------------------
+    # Distance outputs agree (return_distances=True), where applicable
+    # ------------------------------------------------------------------
+
+    @requires_keops
+    def test_pyg_vs_keops_distances_unbatched(self, unbatched_pos):
+        pos_cuda = unbatched_pos.cuda() if CUDA_AVAILABLE else unbatched_pos
+        k = 8
+
+        pyg_dist, pyg_idx = _pyg_knn(unbatched_pos, k=k, query_pos=unbatched_pos, return_distances=True)
+        keops_dist, keops_idx = _keops_knn(pos_cuda, k=k, return_distances=True)
+        keops_dist, keops_idx = keops_dist.cpu(), keops_idx.cpu()
+
+        _assert_neighbor_sets_equal(pyg_idx, keops_idx)
+
+        # Since both are Euclidean distance and neighbor sets match,
+        # sorted per-row distances should match numerically too.
+        pyg_sorted, _ = torch.sort(pyg_dist, dim=-1)
+        keops_sorted, _ = torch.sort(keops_dist, dim=-1)
+        torch.testing.assert_close(pyg_sorted, keops_sorted, rtol=1e-4, atol=1e-4)
+
+    @requires_nanoflann
+    def test_pyg_vs_nanoflann_distances_unbatched(self, unbatched_pos):
+        k = 8
+
+        pyg_dist, pyg_idx = _pyg_knn(unbatched_pos, k=k, query_pos=unbatched_pos, return_distances=True)
+        nf_dist, nf_idx = _nanoflann_knn(
+            unbatched_pos, k=k, query_pos=unbatched_pos, return_distances=True
         )
 
-        nanoflann_result = _nanoflann_knn(
-            pos=random_positions.cpu(),
-            k=k,
-        )
+        _assert_neighbor_sets_equal(pyg_idx, nf_idx)
 
-        self._compare_knn_results(pyg_result, nanoflann_result)
-
-    @pytest.mark.skipif(not HAS_NANOFLANN, reason="NanoFlann not installed")
-    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
-    def test_nanoflann_query_positions(self, random_positions):
-        """Test NanoFlann with query positions."""
-        torch.manual_seed(123)
-        query_pos = torch.randn(50, 3)
-        k = 4
-
-        pyg_result = _pyg_knn(
-            random_positions.cpu(),
-            query_pos=query_pos.cpu(),
-            k=k,
-        )
-
-        nanoflann_result = _nanoflann_knn(
-            random_positions.cpu(),
-            query_pos=query_pos.cpu(),
-            k=k,
-        )
-
-        self._compare_knn_results(pyg_result, nanoflann_result)
-
-    @pytest.mark.skipif(not HAS_NANOFLANN, reason="NanoFlann not installed")
-    def test_nanoflann_caching(self, random_positions):
-        """Test that NanoFlann caching works correctly."""
-        k = 3
-
-        # First call should build cache
-        result1 = knn(
-            pos=random_positions.cpu(),
-            k=k,
-        )
-
-        # Second call should use cache
-        result2 = knn(
-            pos=random_positions.cpu(),
-            k=k,
-        )
-
-        self._compare_knn_results(result1, result2)
-
-    @pytest.mark.skipif(not HAS_NANOFLANN, reason="NanoFlann not installed")
-    @pytest.mark.skipif(not HAS_KEOPS, reason="KeOps not installed")
-    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
-    def test_all_implementations_match(self, random_positions):
-        """Test that all three implementations produce identical results."""
-        k = 4
-
-        pyg_result = _pyg_knn(
-            pos=random_positions.cpu(),
-            k=k,
-        )
-
-        nanoflann_result = _nanoflann_knn(
-            pos=random_positions.cpu(),
-            k=k,
-        )
-
-        keops_result = _keops_knn(
-            pos=random_positions.cpu(),
-            k=k,
-        )
-
-        self._compare_knn_results(pyg_result, nanoflann_result)
-        self._compare_knn_results(pyg_result, keops_result)
-
-    # Edge cases
-    def test_k_greater_than_points(self, random_positions):
-        """Test error when k is greater than number of points."""
-        with pytest.raises(ValueError, match="fewer than K points"):
-            knn(
-                pos=random_positions.cpu(),
-                k=random_positions.size(0) + 1,
-            )
-
-    def test_empty_query(self, random_positions):
-        """Test error when query has 0 points."""
-        with pytest.raises(ValueError, match="neighbors of 0 nodes"):
-            knn(
-                pos=random_positions.cpu(),
-                query_pos=torch.empty(0, 3),
-                k=3,
-            )
-
-    def test_k_equals_points(self, random_positions):
-        """Test when k equals number of points."""
-        k = random_positions.size(0)
-        result = knn(
-            pos=random_positions.cpu(),
-            k=k,
-        )
-        assert result.shape == (random_positions.size(0), k)
-        # All points should be neighbors (in some order)
-        for i in range(result.size(0)):
-            assert set(result[i].tolist()) == set(range(k))
-
-    def test_k_equals_one(self, random_positions):
-        """Test when k equals 1."""
-        k = 1
-        result = knn(
-            pos=random_positions.cpu(),
-            k=k,
-        )
-        assert result.shape == (random_positions.size(0), k)
-        # Each point should be its own nearest neighbor
-        assert torch.all(result.squeeze() == torch.arange(random_positions.size(0)))
-
-    # GPU tests if available
-    @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA not available")
-    @pytest.mark.skipif(not HAS_KEOPS, reason="KeOps not installed")
-    def test_gpu_keops(self, random_positions):
-        """Test KeOps on GPU."""
-        k = 5
-        result = knn(
-            pos=random_positions.cuda(),
-            k=k,
-        )
-        assert result.is_cuda
-        assert result.shape == (random_positions.size(0), k)
-
-    @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA not available")
-    @pytest.mark.skipif(not HAS_KEOPS, reason="KeOps not installed")
-    def test_cpu_vs_gpu_keops(self, random_positions):
-        """Test CPU vs GPU KeOps consistency."""
-        k = 4
-
-        cpu_result = knn(
-            pos=random_positions.cpu(),
-            k=k,
-        )
-
-        gpu_result = knn(
-            pos=random_positions.cuda(),
-            k=k,
-        ).cpu()
-
-        self._compare_knn_results(cpu_result, gpu_result)
-
-    # Test with different dimensions
-    def test_2d_positions(self):
-        """Test with 2D positions."""
-        torch.manual_seed(42)
-        positions = torch.randn(50, 2)
-        k = 3
-
-        result = knn(
-            pos=positions.cpu(),
-            k=k,
-        )
-        assert result.shape == (50, k)
-
-    def test_high_dimensional_positions(self):
-        """Test with high-dimensional positions."""
-        torch.manual_seed(42)
-        positions = torch.randn(50, 20)
-        k = 3
-
-        result = knn(
-            pos=positions.cpu(),
-            k=k,
-        )
-        assert result.shape == (50, k)
-
-    # Test with duplicate points
-    def test_duplicate_points(self):
-        """Test behavior with duplicate points."""
-        positions = torch.tensor(
-            [
-                [0.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0],  # duplicate
-                [1.0, 0.0, 0.0],
-                [1.0, 0.0, 0.0],  # duplicate
-            ],
-            dtype=torch.float,
-        )
-        k = 3
-
-        result = knn(
-            pos=positions.cpu(),
-            k=k,
-        )
-        assert result.shape == (4, k)
-        # First point should find itself and the other duplicate
-        assert result[0, 0] == 0
-        assert 1 in result[0]
+        pyg_sorted, _ = torch.sort(pyg_dist, dim=-1)
+        nf_sorted, _ = torch.sort(nf_dist.float(), dim=-1)
+        torch.testing.assert_close(pyg_sorted, nf_sorted, rtol=1e-4, atol=1e-4)

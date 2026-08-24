@@ -104,11 +104,20 @@ def _cached_kdtree(pos: Tensor):
 
 def _nanoflann_knn(
     pos: Tensor,
+    batch: Tensor | None = None,
     k: int = 20,
     query_pos: Tensor | None = None,
+    query_batch: Tensor | None = None,
     num_threads: int = 4,
     return_distances: bool = False,
 ) -> Tensor:
+
+    if batch is not None:
+        offset = 2 * (pos.amax(dim=0, keepdim=True) - pos.amin(dim=0, keepdim=True))
+        pos = pos + batch.unsqueeze(-1) * offset
+        if query_pos is not None:
+            query_pos = query_pos + query_batch.unsqueeze(-1) * offset
+
     kdtree = _cached_kdtree(pos)
     distances, indices = kdtree.kneighbors(
         query_pos.numpy(),
@@ -140,18 +149,19 @@ def knn(
     if pos.is_cuda and HAS_KEOPS:
         return _keops_knn(
             pos,
-            k=k,
             batch=batch,
             query_pos=query_pos,
             query_batch=query_batch,
+            k=k,
             return_distances=return_distances,
         )
-    elif batch is None and HAS_NANOFLANN:
+    elif not pos.is_cuda and HAS_NANOFLANN:
         return _nanoflann_knn(
             pos,
-            k=k,
+            batch=batch,
             query_pos=query_pos,
-            num_threads=num_threads,
+            query_batch=query_batch,
+            k=k,
             return_distances=return_distances,
         )
     else:

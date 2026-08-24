@@ -19,6 +19,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "polyscope>=2.6.1",
+    "pyg-lib>=0.8.0",
     "pykeops>=2.3",
     "pynanoflann>=0.10.0",
     "pytest>=9.1.1",
