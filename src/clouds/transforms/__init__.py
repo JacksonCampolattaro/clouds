@@ -10,6 +10,7 @@ from .cluster import ClusterSelect as ClusterSelect
 from .color import RandomColorAutoContrast as RandomColorAutoContrast
 from .cut_select import CutCrop as CutCrop
 from .cut_select import CutSelect as CutSelect
+from .density import EstimateDensity as EstimateDensity
 from .density import InverseDensitySelect as InverseDensitySelect
 from .discard_attribute import DiscardAttributes as DiscardAttributes
 from .fps import FurthestPointSample as FurthestPointSample
