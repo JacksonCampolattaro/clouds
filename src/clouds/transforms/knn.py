@@ -29,17 +29,22 @@ def _pyg_knn(
     query_pos: Tensor | None = None,
     query_batch: Tensor | None = None,
     return_distances: bool = False,
+    num_threads: int = 4,
     **kwargs,
 ) -> Tensor | tuple[Tensor, Tensor]:
-    assert not return_distances
-    return pool.knn(
+    indices = pool.knn(
         pos,
         query_pos if query_pos is not None else pos,
         k=k,
         batch_x=query_batch,
         batch_y=query_batch,
-        num_workers=4,
-    )
+        num_workers=num_threads,
+    )[1].reshape(-1, k)
+    if return_distances:
+        distances = torch.linalg.vector_norm(query_pos[:, None, :] - pos[indices, :], dim=-1)
+        return (distances, indices)
+    else:
+        return indices
 
 
 def _diagonal_ranges(batch_x: Tensor = None, batch_y: Tensor = None):
