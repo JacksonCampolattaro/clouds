@@ -197,7 +197,6 @@ def _convert_frames(args):
 
                 # TODO: produce normals, intensity, etc.
 
-
         # Flatten everything into a single point cloud
         return Data(
             pos=torch.cat(points, dim=0),
@@ -297,7 +296,6 @@ class SemanticWaymo(Dataset):
         else:
             return self.index_select(idx)
 
-
     def download(self):
         PROTO_PACKAGE = "waymo-open-dataset-tf-2-12-0"
 
@@ -365,10 +363,10 @@ class SemanticWaymo(Dataset):
     def processed_file_names(self) -> list[str]:
         return ['splits.pt']
 
+
 if __name__ == '__main__':
     root = os.path.join(os.path.realpath(sys.argv[1]), 'SemanticWaymo')
     dataset = SemanticWaymo(root=root, split='train')
-    from clouds.show import show_data
     import random
     # dataset._data = random.shuffle(dataset._data)
 

@@ -21,6 +21,7 @@ try:
 except ImportError:
     HAS_KEOPS = False
 
+
 def _pyg_knn(
     pos: Tensor,
     batch: Tensor | None = None,
@@ -39,6 +40,7 @@ def _pyg_knn(
         batch_y=query_batch,
         num_workers=4,
     )
+
 
 def _diagonal_ranges(batch_x: Tensor = None, batch_y: Tensor = None):
     """Encodes the block-diagonal structure associated to a batch vector."""

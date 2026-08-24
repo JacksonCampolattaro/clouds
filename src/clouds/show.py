@@ -274,6 +274,7 @@ def register_edges(
 
     return curve
 
+
 def register_pyg_data(
     data: Data,
     node_color: dict | None = None,
@@ -302,7 +303,6 @@ def register_pyg_data(
             store.pos[:, 0] += x_offset_index * bbox_size[0] * 1.1
             store.pos[:, 1] += y_offset_index * bbox_size[1] * 1.1
 
-
     if isinstance(data, HeteroData):
         node_color, node_radius = node_color or {}, node_radius or {}
         edge_color, edge_radius = edge_color or {}, edge_radius or {}
@@ -322,7 +322,7 @@ def register_pyg_data(
             scaling_factor *= 1.05
             if hasattr(item, 'pos'):
                 # Only show the first scale with position, by default
-                show_scale = False  
+                show_scale = False 
 
         for (source, _, dest), item in data.edge_items():
             register_edges(
@@ -354,6 +354,7 @@ def register_pyg_data(
                 radius=edge_radius or (0.005 / batch_size),
             )
 
+
 @torch.compiler.disable(recursive=True)
 def show_data(
     data: Data,
@@ -373,6 +374,7 @@ def show_data(
 
     ps.show()
     ps.remove_all_structures()
+
 
 # TODO: add utility for rendering to an image!
 @torch.compiler.disable(recursive=True)

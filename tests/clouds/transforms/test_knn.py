@@ -2,7 +2,7 @@ import pytest
 import torch
 from torch_geometric.typing import WITH_KNN as HAS_PYG_KNN
 
-from clouds.transforms.knn import HAS_KEOPS, HAS_NANOFLANN, knn, _pyg_knn, _keops_knn, _nanoflann_knn
+from clouds.transforms.knn import HAS_KEOPS, HAS_NANOFLANN, _keops_knn, _nanoflann_knn, _pyg_knn, knn
 
 
 class TestKNNImplementations:

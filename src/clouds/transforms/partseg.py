@@ -40,6 +40,7 @@ class CategoryClassMask(BaseTransform):
 
         return data
 
+
 class RefinePartSegmentation(BaseTransform):
     """
     A simplified version of part_seg_refinement, as done in DeLA and PointNeXt
@@ -94,6 +95,5 @@ class RefinePartSegmentation(BaseTransform):
                  
                 # Overwrite values
                 store.pred = torch.where(bad_classes, -torch.inf, store.pred)
-
 
         return data

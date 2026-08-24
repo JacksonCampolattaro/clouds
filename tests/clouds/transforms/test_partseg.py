@@ -91,8 +91,6 @@ class TestCategoryClassMask:
         assert result.pred.device == data.category.device
 
 
-
-
 class TestRefinePartSegmentation:
     @pytest.fixture
     def basic_class_map(self):
