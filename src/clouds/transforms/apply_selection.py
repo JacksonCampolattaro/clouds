@@ -44,6 +44,7 @@ class ApplySelection(BaseTransform):
     remapped (rather than dropped) via `select_knn_edges`, assuming it is
     stored in dense (N, K) kNN format.
     """
+    # FIXME: this can use pyg's existing subgraph implementation!
 
     def forward(self, data: Data) -> Data:
         selection_index = data.get('selection_index')

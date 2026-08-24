@@ -113,6 +113,8 @@ def _nanoflann_knn(
 ) -> Tensor:
 
     if batch is not None:
+        # FIXME: offset should be based on largest value in _either_ pos or query
+        # This will probably come back to bite me someday
         offset = 2 * (pos.amax(dim=0, keepdim=True) - pos.amin(dim=0, keepdim=True))
         pos = pos + batch.unsqueeze(-1) * offset
         if query_pos is not None:

@@ -31,6 +31,8 @@ class Mix3D(BaseTransform):
             data.ptr[1:] - data.ptr[:-1],
         )
 
+        data.batch_size = data.ptr.size(0)
+
         return data
 
     def _boundary_mask(self, n: int, device: torch.device) -> Tensor:
