@@ -31,6 +31,8 @@ from .random_select import RandomSample as RandomSample
 from .random_select import RandomSelect as RandomSelect
 from .random_shift import RandomShift as RandomShift
 from .scale_attribute import ScaleAttribute as ScaleAttribute
+from .vote import CombineVotes as CombineVotes
+from .vote import VoteAugmentations as VoteAugmentations
 from .voxel import VoxelCluster as VoxelCluster
 from .voxel import VoxelSample as VoxelSample
 from .voxel import VoxelSelect as VoxelSelect

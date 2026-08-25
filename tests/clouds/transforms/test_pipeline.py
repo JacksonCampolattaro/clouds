@@ -9,6 +9,7 @@ class MockTransform(Identity):
     def __init__(self, name=""):
         self.name = name
 
+
 class TestUnpackPipeline:
     def test_unpack_pipeline_full_pipeline(self):
         """Test unpack_pipeline with all stages present."""

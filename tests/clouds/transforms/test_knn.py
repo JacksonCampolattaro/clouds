@@ -172,7 +172,6 @@ class TestKNNImplementations:
         for row in nanoflann_indices[:first_batch_size]:
             assert (row < first_batch_size).all(), "KeOps result leaked cross-batch neighbors"
             
-
     # ------------------------------------------------------------------
     # KeOps vs nanoflann (both optional deps present)
     # ------------------------------------------------------------------

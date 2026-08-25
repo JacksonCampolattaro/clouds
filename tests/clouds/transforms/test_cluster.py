@@ -214,7 +214,7 @@ class TestClusterSelect:
         data = Data(
             x=torch.randn(15, 5),
             cluster=torch.tensor([0, 0, 3, 3, 3, 1, 1, 2, 2, 2, 2, 4, 5, 4, 5]),
-            batch=  torch.tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1]),
+            batch=torch.tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1]),
         )
 
         transform = ClusterSelect(deterministic=True, pick=1)
@@ -234,7 +234,7 @@ class TestClusterSelect:
         data = Data(
             x=torch.randn(15, 5),
             cluster=torch.tensor([0, 0, 3, 3, 3, 1, 1, 2, 2, 2, 2, 4, 5, 4, 5]),
-            batch=  torch.tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1]),
+            batch=torch.tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1]),
         )
 
         transform = ClusterSelect(deterministic=False)
