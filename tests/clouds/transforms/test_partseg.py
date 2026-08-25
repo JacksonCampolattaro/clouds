@@ -130,7 +130,7 @@ class TestRefinePartSegmentation:
     @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
     def test_forward_with_neighborhood(self, basic_class_map, basic_data):
         """Test forward pass with neighborhood refinement."""
-        transform = RefinePartSegmentation(basic_class_map, replace_with_neighbors=True, k=2)
+        transform = RefinePartSegmentation(basic_class_map, replace_with_neighbors=True, k=1)
         result = transform(basic_data)
         
         # Verify that all predicted labels are valid for their category

@@ -211,7 +211,6 @@ class TestCombineVotes:
         # but not averaged. The test checks that reshape works with batched input.
         assert result.y.shape[0] == 5  # 2 + 3 nodes
         
-    
     def test_forward_asserts_num_votes(self):
         """Test that forward raises assertion if num_votes is missing."""
         data = Data(

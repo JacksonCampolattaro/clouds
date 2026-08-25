@@ -194,6 +194,6 @@ class KNNSourceGraph(BaseTransform):
             k=self.k,
             batch=data.get('batch', None),
             num_threads=self.num_threads,
-        ).long()
+        )
 
         return SourceIndexedData(**data.to_dict())

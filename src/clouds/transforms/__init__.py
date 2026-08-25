@@ -19,6 +19,8 @@ from .height import ExtractHeights as ExtractHeights
 from .identity import Identity as Identity
 from .knn import KNNSourceGraph as KNNSourceGraph
 from .mix3d import Mix3D as Mix3D
+from .partseg import CategoryClassMask as CategoryClassMask
+from .partseg import RefinePartSegmentation as RefinePartSegmentation
 from .radius_select import RadiusSelect as RadiusSelect
 from .radius_select import SphereCrop as SphereCrop
 from .radius_select import SphereSelect as SphereSelect

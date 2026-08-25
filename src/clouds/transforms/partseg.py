@@ -92,7 +92,7 @@ class RefinePartSegmentation(BaseTransform):
                     # Determine the most popular of the neighbor labels
                     store.pred[bad_preds] = one_hot(preds, num_classes=store.pred.size(-1))[neighbors[:, 1:]].mean(dim=1)
                     # store.pred[bad_preds] = store.pred[neighbors[:, 1:]].mean(dim=1)
-                 
+
                 # Overwrite values
                 store.pred = torch.where(bad_classes, -torch.inf, store.pred)
 

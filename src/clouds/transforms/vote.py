@@ -1,4 +1,3 @@
-from itertools import chain
 
 import torch
 from torch import Tensor
