@@ -20,13 +20,7 @@ def _fpsample_fps(
     n: int | None = None,
     ratio: float | None = None,
     deterministic: bool = False,
-    batch: Tensor | None = None,
-    batch_size: int | None = None,
 ) -> Tensor:
-    if batch is not None:
-        offset = 2 * (pos.amax(dim=0, keepdim=True) - pos.amin(dim=0, keepdim=True))
-        pos = pos + batch.unsqueeze(-1) * offset
-
     if not n:
         assert ratio
         n = numpy.clip(
@@ -74,7 +68,7 @@ def fps(
     assert (n or ratio) and not (n and ratio)
     if pos.device.type == "cpu" and batch is None and HAS_TORCH_FPSAMPLE:
         # Use torch_fpsample only if it is available AND data is on CPU
-        return _fpsample_fps(pos, n=n, ratio=ratio, deterministic=deterministic, batch=batch)
+        return _fpsample_fps(pos, n=n, ratio=ratio, deterministic=deterministic)
     else:
         # PyG's fps works on CPU and GPU, and handles batches
         return _pyg_fps(pos, n=n, ratio=ratio, deterministic=deterministic, batch=batch, batch_size=batch_size)
@@ -95,6 +89,7 @@ class FurthestPointSelect(BaseTransform):
         self.deterministic = deterministic
 
     def forward(self, data: Data) -> Data:
+        assert not isinstance(data.batch, Tensor)
         selection_size = int(data.num_nodes * self.selection_factor)
         selection_size = numpy.clip(
             selection_size,

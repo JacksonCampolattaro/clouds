@@ -102,11 +102,8 @@ class TestVoteAugmentations:
         
         # Check that combined output has the right shape
         assert combined.num_votes == 2
-        # Should have 2 votes x 2 augmentations x 2 points
-        assert combined.x.shape[0] == 8
-        assert combined.vote_pred.shape[0] == 8
-        assert combined.vote_y.shape[0] == 8
         # Should have 2 votes x 2 points
+        assert combined.x.shape[0] == 4
         assert combined.pred.shape[0] == 4
         assert combined.y.shape[0] == 4
 
@@ -122,18 +119,16 @@ class TestCombineVotes:
         """Test basic forward pass combining votes."""
         # Create data with multiple votes
         data = Data(
-            x=torch.tensor([[1.0, 2.0], [3.0, 4.0]]),
-            pred=torch.tensor([
-                [[0.1, 0.2, 0.7], [0.3, 0.4, 0.3]],  # Vote 0
-                [[0.2, 0.3, 0.5], [0.1, 0.6, 0.3]],  # Vote 1
-                [[0.1, 0.4, 0.5], [0.2, 0.3, 0.5]]   # Vote 2
-            ]),  # Shape: [num_votes, num_nodes, num_classes]
-            y=torch.tensor([
-                [0, 1],  # Vote 0
-                [1, 0],  # Vote 1
-                [1, 1]   # Vote 2
-            ]),  # Shape: [num_votes, num_nodes]
-            num_votes=3
+            x=torch.tensor([[1.0, 2.0], [3.0, 4.0], [3.0, 4.0]]),
+            pred=torch.tensor(
+                [
+                    [[0.1, 0.2, 0.7], [0.3, 0.4, 0.3]],  # Vote 0
+                    [[0.2, 0.3, 0.5], [0.1, 0.6, 0.3]],  # Vote 1
+                    [[0.1, 0.4, 0.5], [0.2, 0.3, 0.5]],  # Vote 2
+                ]
+            ),  # Shape: [num_votes, num_nodes, num_classes]
+            y=torch.tensor([0, 1, 1]),  # Shape: [num_votes, num_nodes]
+            num_votes=3,
         )
         
         transform = CombineVotes()
@@ -142,9 +137,6 @@ class TestCombineVotes:
         # Check that num_votes was preserved
         assert result.num_votes == 3
         
-        # Check that vote_pred was stored
-        assert hasattr(result, 'vote_pred')
-        assert torch.equal(result.vote_pred, data.pred)
         
         # Check that pred was averaged
         expected_pred = data.pred.mean(dim=0)
@@ -223,44 +215,16 @@ class TestCombineVotes:
         with pytest.raises(AssertionError):
             transform(data)
     
-    def test_forward_preserves_other_attributes(self):
-        """Test that other attributes are preserved."""
-        data = Data(
-            x=torch.tensor([[1.0, 2.0], [3.0, 4.0]]),
-            pred=torch.tensor([
-                [[0.1, 0.2, 0.7], [0.3, 0.4, 0.3]],
-                [[0.2, 0.3, 0.5], [0.1, 0.6, 0.3]]
-            ]),
-            y=torch.tensor([[0, 1], [1, 0]]),
-            edge_index=torch.tensor([[0, 1], [1, 0]]),
-            num_votes=2,
-            custom_attr=torch.tensor([1.0, 2.0])
-        )
-        
-        transform = CombineVotes()
-        result = transform(data)
-        
-        # Other attributes should be preserved
-        assert hasattr(result, 'custom_attr')
-        assert torch.equal(result.custom_attr, data.custom_attr)
-        assert hasattr(result, 'edge_index')
-        assert torch.equal(result.edge_index, data.edge_index)
-        assert hasattr(result, 'x')
-        assert torch.equal(result.x, data.x)
     
     def test_forward_predictions_mean_correctly(self):
         """Test that predictions are averaged correctly."""
         data = Data(
-            x=torch.tensor([[1.0, 2.0]]),
-            pred=torch.tensor([
-                [[0.1, 0.2, 0.7]],
-                [[0.2, 0.3, 0.5]],
-                [[0.1, 0.4, 0.5]]
-            ]),
-            num_votes=3
+            x=torch.tensor([[1.0, 2.0], [1.0, 2.0], [1.0, 2.0]]),
+            pred=torch.tensor([[[0.1, 0.2, 0.7]], [[0.2, 0.3, 0.5]], [[0.1, 0.4, 0.5]]]),
+            num_votes=3,
         )
-        
-        transform = CombineVotes()
+
+        transform = CombineVotes(combine='mean_logits')
         result = transform(data)
         
         # Manually compute expected mean

@@ -76,7 +76,10 @@ class ApplySelection(BaseTransform):
 
         if isinstance(out.batch, Tensor):
             # NOTE: assumes batches are contiguous.
-            counts = torch.bincount(out.batch, minlength=data.batch_size)
+            counts = torch.bincount(
+                out.batch,
+                minlength=data.batch_size if hasattr(data, 'batch_size') else data.batch.amax() + 1,
+            )
             out.ptr = torch.cat([torch.tensor([0], device=out.batch.device), torch.cumsum(counts, dim=0)])
 
         del out.selection_index
