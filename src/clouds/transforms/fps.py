@@ -89,7 +89,6 @@ class FurthestPointSelect(BaseTransform):
         self.deterministic = deterministic
 
     def forward(self, data: Data) -> Data:
-        assert not isinstance(data.batch, Tensor)
         selection_size = int(data.num_nodes * self.selection_factor)
         selection_size = numpy.clip(
             selection_size,
