@@ -58,7 +58,7 @@ class EstimateDensity(BaseTransform):
             data.density = MeanAggregation()(
                 approx_lambda,
                 index=query_data.batch,
-                ptr=query_data.ptr,
+                ptr=query_data.getattr('ptr', None),
                 dim=0,
             )
 
