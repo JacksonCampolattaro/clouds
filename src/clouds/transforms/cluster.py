@@ -56,9 +56,9 @@ class ClusterSelect(BaseTransform):
         if self.deterministic:
             pick = self.pick if self.pick is not None else self.current_pick
             self.current_pick += 1
-            data.selection_index = _select_nth_node_per_cluster(data.cluster, pick)
+            data.selection_index = _select_nth_node_per_cluster(data.cluster_index, pick)
         else:
-            data.selection_index = _select_random_node_per_cluster(data.cluster)
+            data.selection_index = _select_random_node_per_cluster(data.cluster_index)
 
         return data
 
@@ -73,7 +73,7 @@ class ClusterSample(ClusterSelect):
 
 class NearestSelectionCluster(BaseTransform):
     def forward(self, data: Data) -> Data:
-        data.cluster = knn(
+        data.cluster_index = knn(
             pos=data.pos[data.selection_index],
             batch=data.batch[data.selection_index] if isinstance(data.batch, Tensor) else None,
             query_pos=data.pos,

@@ -33,7 +33,7 @@ class VoxelCluster(BaseTransform):
 
         # Remap to contiguous, sequential IDs (0 .. num_clusters-1)
         unique_clusters = torch.unique(cluster)
-        data.cluster = torch.searchsorted(unique_clusters, cluster)
+        data.cluster_index = torch.searchsorted(unique_clusters, cluster)
 
         return data
 
@@ -91,7 +91,7 @@ class VoxelSelect(BaseTransform):
                     ClusterSelect(pick=pick if self.deterministic else None),
                 ]
             )(data)
-            del data.cluster
+            del data.cluster_index
 
         return data
 

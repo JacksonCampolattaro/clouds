@@ -126,7 +126,7 @@ class TestClusterSelect:
         """Test random selection mode."""
         data = Data(
             x=torch.randn(10, 5),
-            cluster=torch.tensor([0, 0, 1, 1, 1, 2, 2, 2, 2, 3]),
+            cluster_index=torch.tensor([0, 0, 1, 1, 1, 2, 2, 2, 2, 3]),
             batch=torch.tensor([0, 0, 0, 0, 0, 1, 1, 1, 1, 1]),
         )
 
@@ -144,7 +144,7 @@ class TestClusterSelect:
         assert torch.all(result.selection_index < 10)
 
         # Each cluster should have exactly one selection
-        selected_clusters = result.cluster[result.selection_index]
+        selected_clusters = result.cluster_index[result.selection_index]
         unique_clusters, counts = torch.unique(selected_clusters, return_counts=True)
         assert torch.all(counts == 1)
         assert torch.all(unique_clusters == torch.tensor([0, 1, 2, 3]))
@@ -153,7 +153,7 @@ class TestClusterSelect:
         """Test deterministic selection with fixed pick."""
         data = Data(
             x=torch.randn(10, 5),
-            cluster=torch.tensor([0, 0, 1, 1, 1, 2, 2, 2, 2, 3]),
+            cluster_index=torch.tensor([0, 0, 1, 1, 1, 2, 2, 2, 2, 3]),
             batch=torch.tensor([0, 0, 0, 0, 0, 1, 1, 1, 1, 1]),
         )
 
@@ -172,7 +172,7 @@ class TestClusterSelect:
         """Test deterministic selection with auto-incrementing pick."""
         data = Data(
             x=torch.randn(10, 5),
-            cluster=torch.tensor([0, 0, 1, 1, 1, 2, 2, 2, 2, 3]),
+            cluster_index=torch.tensor([0, 0, 1, 1, 1, 2, 2, 2, 2, 3]),
             batch=torch.tensor([0, 0, 0, 0, 0, 1, 1, 1, 1, 1]),
         )
 
@@ -195,7 +195,7 @@ class TestClusterSelect:
 
     def test_cluster_select_single_cluster(self):
         """Test with a single cluster."""
-        data = Data(x=torch.randn(5, 3), cluster=torch.tensor([0, 0, 0, 0, 0]), batch=torch.tensor([0, 0, 0, 0, 0]))
+        data = Data(x=torch.randn(5, 3), cluster_index=torch.tensor([0, 0, 0, 0, 0]), batch=torch.tensor([0, 0, 0, 0, 0]))
 
         transform = ClusterSelect(deterministic=True, pick=2)
         result = transform(data)
@@ -213,7 +213,7 @@ class TestClusterSelect:
         """Test with non-contiguous clusters across different batches."""
         data = Data(
             x=torch.randn(15, 5),
-            cluster=torch.tensor([0, 0, 3, 3, 3, 1, 1, 2, 2, 2, 2, 4, 5, 4, 5]),
+            cluster_index=torch.tensor([0, 0, 3, 3, 3, 1, 1, 2, 2, 2, 2, 4, 5, 4, 5]),
             batch=torch.tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1]),
         )
 
@@ -224,7 +224,7 @@ class TestClusterSelect:
         assert result.selection_index.size(0) == 6
 
         # Check that selections are from the correct clusters
-        selected_clusters = result.cluster[result.selection_index]
+        selected_clusters = result.cluster_index[result.selection_index]
         unique_clusters, counts = torch.unique(selected_clusters, return_counts=True)
         assert torch.all(counts == 1)
         assert torch.all(unique_clusters == torch.tensor([0, 1, 2, 3, 4, 5]))
@@ -233,7 +233,7 @@ class TestClusterSelect:
         """Test with non-contiguous clusters across different batches."""
         data = Data(
             x=torch.randn(15, 5),
-            cluster=torch.tensor([0, 0, 3, 3, 3, 1, 1, 2, 2, 2, 2, 4, 5, 4, 5]),
+            cluster_index=torch.tensor([0, 0, 3, 3, 3, 1, 1, 2, 2, 2, 2, 4, 5, 4, 5]),
             batch=torch.tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1]),
         )
 
@@ -244,7 +244,7 @@ class TestClusterSelect:
         assert result.selection_index.size(0) == 6
 
         # Check that selections are from the correct clusters
-        selected_clusters = result.cluster[result.selection_index]
+        selected_clusters = result.cluster_index[result.selection_index]
         unique_clusters, counts = torch.unique(selected_clusters, return_counts=True)
         assert torch.all(counts == 1)
         assert torch.all(unique_clusters == torch.tensor([0, 1, 2, 3, 4, 5]))

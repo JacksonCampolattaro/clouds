@@ -61,11 +61,11 @@ class TestVoxelCluster:
         data = transform(sample_data)
 
         # Check that cluster is added
-        assert hasattr(data, 'cluster')
-        assert isinstance(data.cluster, torch.Tensor)
+        assert hasattr(data, 'cluster_index')
+        assert isinstance(data.cluster_index, torch.Tensor)
 
         # Check that cluster is contiguous (0 to num_clusters-1)
-        unique_clusters = torch.unique(data.cluster)
+        unique_clusters = torch.unique(data.cluster_index)
         assert unique_clusters.tolist() == list(range(len(unique_clusters)))
 
     @pytest.mark.skipif(not HAS_PYG_GRID_CLUSTER, reason="pyg grid clustering not installed")
@@ -75,7 +75,7 @@ class TestVoxelCluster:
         data = transform(sample_data_multi_batch)
 
         # Check that cluster is contiguous globally
-        unique_clusters = torch.unique(data.cluster)
+        unique_clusters = torch.unique(data.cluster_index)
         assert unique_clusters.tolist() == list(range(len(unique_clusters)))
 
         # Check batch information is preserved
@@ -85,7 +85,7 @@ class TestVoxelCluster:
         # Check each batch has valid clusters
         for batch_id in torch.unique(data.batch):
             mask = data.batch == batch_id
-            batch_clusters = data.cluster[mask]
+            batch_clusters = data.cluster_index[mask]
             assert len(torch.unique(batch_clusters)) > 0
 
     @pytest.mark.skipif(not HAS_PYG_GRID_CLUSTER, reason="pyg grid clustering not installed")
@@ -98,7 +98,7 @@ class TestVoxelCluster:
         random.seed(42)  # Set seed for reproducibility
         for _ in range(5):
             data = transform(sample_data.clone())
-            results.append(data.cluster)
+            results.append(data.cluster_index)
 
         # Check that not all results are identical (statistically)
         unique_results = [torch.unique(r) for r in results]

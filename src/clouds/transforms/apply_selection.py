@@ -60,7 +60,7 @@ class ApplySelection(BaseTransform):
             if key == 'edge_index':
                 assert item.size(0) == num_nodes  # Only works on kNN-formatted edges
                 out[key] = select_knn_edges(item, selection_index=selection_index)
-            elif 'cluster' in key or 'index' in key:
+            elif 'index' in key:
                 # Drop stale index/cluster bookkeeping fields
                 pass
             elif data.is_node_attr(key) and item.size(0) == num_nodes:
