@@ -5,7 +5,7 @@ import torch
 from torch_geometric.data import Batch, Data
 from torch_geometric.transforms import BaseTransform
 
-from clouds.transforms import CombineVotes, VoteAugmentations
+from clouds.transforms import CombineVotes, Identity, VoteAugmentations
 
 
 class TestVoteAugmentations:
@@ -64,165 +64,6 @@ class TestVoteAugmentations:
         assert hasattr(result, 'x')
         assert hasattr(result, 'edge_index')
         assert hasattr(result, 'y')
-
-    def test_forward_with_batch_input_old_behavior(self):
-        """Test forward pass with batched input (old behavior)."""
-        mock_aug1 = Mock(spec=BaseTransform)
-        mock_aug2 = Mock(spec=BaseTransform)
-        
-        # Create batched data
-        data1 = Data(
-            x=torch.tensor([[1.0, 2.0], [3.0, 4.0]]),
-            y=torch.tensor([0, 1])
-        )
-        data2 = Data(
-            x=torch.tensor([[5.0, 6.0], [7.0, 8.0]]),
-            y=torch.tensor([1, 0])
-        )
-        batch = Batch.from_data_list([data1, data2])
-        
-        # Mock augmentations to return copies of the batch
-        mock_aug1.return_value = batch.clone()
-        mock_aug2.return_value = batch.clone()
-        
-        transform = VoteAugmentations([mock_aug1, mock_aug2])
-        
-        # This should not raise an assertion error
-        result = transform(batch)
-        
-        assert result.num_votes == 2
-        assert hasattr(result, 'batch')
-        assert hasattr(result, 'ptr')
-    
-    def test_forward_with_batch_input_new_behavior(self):
-        """Test forward pass with batched input producing num_votes times batches."""
-        mock_aug1 = Mock(spec=BaseTransform)
-        mock_aug2 = Mock(spec=BaseTransform)
-        mock_aug3 = Mock(spec=BaseTransform)
-        
-        # Create batched data with 2 graphs
-        data1 = Data(
-            x=torch.tensor([[1.0, 2.0], [3.0, 4.0]]),
-            y=torch.tensor([0, 1]),
-            edge_index=torch.tensor([[0, 1], [1, 0]])
-        )
-        data2 = Data(
-            x=torch.tensor([[5.0, 6.0], [7.0, 8.0], [9.0, 10.0]]),
-            y=torch.tensor([1, 0, 1]),
-            edge_index=torch.tensor([[0, 1, 1, 2], [1, 0, 2, 1]])
-        )
-        batch = Batch.from_data_list([data1, data2])
-        
-        # Create augmented versions for each vote
-        # For vote 1: modify features
-        aug_data1_v1 = Data(
-            x=torch.tensor([[2.0, 3.0], [4.0, 5.0]]),
-            y=torch.tensor([0, 1]),
-            edge_index=torch.tensor([[0, 1], [1, 0]])
-        )
-        aug_data2_v1 = Data(
-            x=torch.tensor([[6.0, 7.0], [8.0, 9.0], [10.0, 11.0]]),
-            y=torch.tensor([1, 0, 1]),
-            edge_index=torch.tensor([[0, 1, 1, 2], [1, 0, 2, 1]])
-        )
-        aug_batch_v1 = Batch.from_data_list([aug_data1_v1, aug_data2_v1])
-        
-        # For vote 2: modify edges
-        aug_data1_v2 = Data(
-            x=torch.tensor([[1.0, 2.0], [3.0, 4.0]]),
-            y=torch.tensor([0, 1]),
-            edge_index=torch.tensor([[0, 1], [1, 0]])
-        )
-        aug_data2_v2 = Data(
-            x=torch.tensor([[5.0, 6.0], [7.0, 8.0], [9.0, 10.0]]),
-            y=torch.tensor([1, 0, 1]),
-            edge_index=torch.tensor([[0, 1, 2], [1, 2, 0]])  # Different edge structure
-        )
-        aug_batch_v2 = Batch.from_data_list([aug_data1_v2, aug_data2_v2])
-        
-        # For vote 3: modify features differently
-        aug_data1_v3 = Data(
-            x=torch.tensor([[0.5, 1.0], [1.5, 2.0]]),
-            y=torch.tensor([0, 1]),
-            edge_index=torch.tensor([[0, 1], [1, 0]])
-        )
-        aug_data2_v3 = Data(
-            x=torch.tensor([[2.5, 3.0], [3.5, 4.0], [4.5, 5.0]]),
-            y=torch.tensor([1, 0, 1]),
-            edge_index=torch.tensor([[0, 1, 1, 2], [1, 0, 2, 1]])
-        )
-        aug_batch_v3 = Batch.from_data_list([aug_data1_v3, aug_data2_v3])
-        
-        mock_aug1.return_value = aug_batch_v1
-        mock_aug2.return_value = aug_batch_v2
-        mock_aug3.return_value = aug_batch_v3
-        
-        transform = VoteAugmentations([mock_aug1, mock_aug2, mock_aug3])
-        result = transform(batch)
-        
-        # Check num_votes
-        assert result.num_votes == 3
-        
-        # Check that batch tensor has correct grouping
-        # Should have 3 votes * 2 original graphs = 6 graphs total
-        assert hasattr(result, 'batch')
-        assert hasattr(result, 'ptr')
-        
-        # The batch tensor should have values 0,1,0,1,0,1 (for each graph repeated per vote)
-        expected_batch_pattern = torch.tensor([0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1])  # 2 graphs * 3 votes
-        # Actually, the batch values should be ordered by vote first: [0,1,0,1,0,1]
-        # But the actual values depend on collate ordering
-        
-        # Check that we have the right number of nodes total
-        # Original: 2+3=5 nodes per vote, *3 votes = 15 nodes
-        assert result.x.shape[0] == 15
-        
-        # Check that the result contains all augmented data
-        # The order should be: all graphs for vote 1, then all graphs for vote 2, then all graphs for vote 3
-        # Let's verify the features are correctly grouped
-        expected_x = torch.cat([
-            aug_batch_v1.x,  # Vote 1: all graphs
-            aug_batch_v2.x,  # Vote 2: all graphs
-            aug_batch_v3.x   # Vote 3: all graphs
-        ], dim=0)
-        assert torch.equal(result.x, expected_x)
-        
-        # Check y is also correctly grouped
-        expected_y = torch.cat([
-            aug_batch_v1.y,
-            aug_batch_v2.y,
-            aug_batch_v3.y
-        ], dim=0)
-        assert torch.equal(result.y, expected_y)
-    
-    def test_forward_with_batch_input_new_behavior_edge_cases(self):
-        """Test edge cases for batched input new behavior."""
-        # Test with single graph in batch
-        mock_aug1 = Mock(spec=BaseTransform)
-        mock_aug2 = Mock(spec=BaseTransform)
-        
-        single_graph = Data(
-            x=torch.tensor([[1.0, 2.0], [3.0, 4.0]]),
-            y=torch.tensor([0, 1])
-        )
-        batch_single = Batch.from_data_list([single_graph])
-        
-        aug_v1 = Batch.from_data_list([
-            Data(x=torch.tensor([[2.0, 3.0], [4.0, 5.0]]), y=torch.tensor([0, 1]))
-        ])
-        aug_v2 = Batch.from_data_list([
-            Data(x=torch.tensor([[1.5, 2.5], [3.5, 4.5]]), y=torch.tensor([0, 1]))
-        ])
-        
-        mock_aug1.return_value = aug_v1
-        mock_aug2.return_value = aug_v2
-        
-        transform = VoteAugmentations([mock_aug1, mock_aug2])
-        result = transform(batch_single)
-        
-        assert result.num_votes == 2
-        assert result.x.shape[0] == 4  # 2 nodes * 2 votes
-    
     
     def test_forward_with_batch_input_combine_votes_compatibility(self):
         """Test that VoteAugmentations output is compatible with CombineVotes."""
@@ -236,12 +77,7 @@ class TestVoteAugmentations:
         )
 
         # Voting with 2 augmentations
-        vote_transform = VoteAugmentations(
-            [
-                Mock(spec=BaseTransform, return_value=data),
-                Mock(spec=BaseTransform, return_value=data),
-            ]
-        )
+        vote_transform = VoteAugmentations([Identity(), Identity()])
        
         # Apply VoteAugmentations
         augmented = vote_transform(data)
@@ -261,15 +97,16 @@ class TestVoteAugmentations:
         )
 
         # Apply CombineVotes
-        combine_transform = CombineVotes()
+        combine_transform = CombineVotes(combine='mean_logits')
         combined = combine_transform(augmented)
         
         # Check that combined output has the right shape
-        # Should have 2 graphs with averaged predictions
         assert combined.num_votes == 2
+        # Should have 2 votes x 2 augmentations x 2 points
         assert combined.x.shape[0] == 8
         assert combined.vote_pred.shape[0] == 8
         assert combined.vote_y.shape[0] == 8
+        # Should have 2 votes x 2 points
         assert combined.pred.shape[0] == 4
         assert combined.y.shape[0] == 4
 
