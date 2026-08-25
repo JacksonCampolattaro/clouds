@@ -53,7 +53,7 @@ class CombineVotes(BaseTransform):
         if self.combine == 'mean_logits':
             out.pred = data.pred.reshape(data.num_votes, -1, data.pred.size(-1)).mean(dim=0)
         elif self.combine == 'mean_probs':
-            probs = torch.softmax(data.pred)
+            probs = torch.softmax(data.pred, dim=-1)
             mean_probs = probs.reshape(data.num_votes, -1, data.pred.size(-1)).mean(dim=0)
             out.pred = mean_probs.clamp_min(1e-8).log()
         elif self.combine == 'popularity':
