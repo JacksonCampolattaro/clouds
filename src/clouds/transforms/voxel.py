@@ -95,6 +95,13 @@ class VoxelSelect(BaseTransform):
 
         return data
 
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}({self.voxel_size}, "  #
+            + (f"p={self.large_voxel_prob}, " if isinstance(self.voxel_size, tuple) else "")
+            + f"deterministic={self.deterministic})"
+        )
+
 
 class VoxelSample(VoxelSelect):
     def forward(self, data: Data) -> Data:
