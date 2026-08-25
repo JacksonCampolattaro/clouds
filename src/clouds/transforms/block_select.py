@@ -44,4 +44,4 @@ class BlockSelect(BaseTransform):
 
 class BlockSample(BlockSelect):
     def forward(self, data: Data) -> Data:
-        return apply_selection(super(data))
+        return apply_selection(super().forward(data))
