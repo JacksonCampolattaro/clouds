@@ -20,9 +20,9 @@ class VoteAugmentations(BaseTransform):
         if isinstance(data.batch, Tensor):
             split_data = data.to_data_list()
             for d in split_data:
-                d.batch, d.ptr = None, None
+                for store in d.node_stores:
+                    store.batch, store.ptr = None, None
             augmented_data = [aug(d.clone()) for aug in self.augmentations for d in split_data]
-            assert not isinstance(augmented_data[0].batch, Tensor)
         else:
             augmented_data = [aug(data.clone()) for aug in self.augmentations]
 

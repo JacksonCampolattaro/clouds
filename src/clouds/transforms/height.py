@@ -17,6 +17,7 @@ class ExtractHeights(BaseTransform):
 
         if self.ground:
             if 'batch' in data:
+                assert not isinstance(data.batch, Tensor)
                 min_heights = -global_max_pool(-data.height, batch=data.batch)
                 data.height = data.height - min_heights[data.batch]
             else:
