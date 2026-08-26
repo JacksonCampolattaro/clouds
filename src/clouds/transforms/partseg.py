@@ -62,6 +62,7 @@ class RefinePartSegmentation(BaseTransform):
         # self.register_buffer('categories_to_classes', categories_to_classes) # Valid for later PyG
 
     def forward(self, data: Data) -> Data:
+        # FIXME: disable AMP!
         self.categories_to_classes = self.categories_to_classes.to(device=data.category.device)
         for store in data.node_stores:
             if hasattr(store, 'pred') and hasattr(store, 'y'):

@@ -8,7 +8,7 @@ from torch_geometric.nn.aggr import MeanAggregation
 from torch_geometric.transforms import BaseTransform
 
 from clouds.transforms.knn import knn
-from clouds.transforms.random_select import RandomSelect
+from clouds.transforms.random_select import RandomSample
 
 
 def _unit_ball_volume(d: float) -> float:
@@ -33,7 +33,7 @@ class EstimateDensity(BaseTransform):
 
         # Sample some points
         # TODO: use random select!
-        coarse_data = RandomSelect(selection_factor=self.estimation_factor, min_num_points=64)(data)
+        coarse_data = RandomSample(selection_factor=self.estimation_factor, min_num_points=64)(data)
 
         # Find distances to the kth nearest neighbors
         query_data = data if self.pointwise else coarse_data
@@ -57,8 +57,8 @@ class EstimateDensity(BaseTransform):
         else:
             data.density = MeanAggregation()(
                 approx_lambda,
-                index=query_data.batch,
-                ptr=query_data.ptr if hasattr(query_data, 'ptr') else None,
+                index=getattr(query_data, 'batch', None),
+                ptr=getattr(query_data, 'ptr', None),
                 dim=0,
             )
 
