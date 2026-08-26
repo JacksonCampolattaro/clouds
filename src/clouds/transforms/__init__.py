@@ -13,6 +13,7 @@ from .cut_select import CutSelect as CutSelect
 from .density import EstimateDensity as EstimateDensity
 from .density import InverseDensitySelect as InverseDensitySelect
 from .discard_attribute import DiscardAttributes as DiscardAttributes
+from .extract import ExtractCoords as ExtractCoords
 from .extract import ExtractHeights as ExtractHeights
 from .fps import FurthestPointSample as FurthestPointSample
 from .fps import FurthestPointSelect as FurthestPointSelect
