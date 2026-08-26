@@ -86,7 +86,7 @@ class CombineVotes(BaseTransform):
                 out[key] = item[:new_num_nodes]
                 if 'pos' not in data:
                     out.num_nodes = out[key].size(0)
-            elif batch_size and isinstance(item, Tensor) and item.size(0) == batch_size:
+            elif isinstance(item, Tensor) and len(item.shape) == 1 and item.size(0) == batch_size:
                 out[key] = item[:new_batch_size]
             else:
                 out[key] = item
