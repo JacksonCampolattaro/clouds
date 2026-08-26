@@ -18,9 +18,14 @@ class VoteAugmentations(BaseTransform):
         augmented_data = [aug(data) for aug in self.augmentations]
 
         if isinstance(data.batch, Tensor):
-            augmented_data = [aug(d.clone()) for aug in self.augmentations for d in data.to_data_list()]
+            split_data = data.to_data_list()
+            for d in split_data:
+                d.batch, d.ptr = None, None
+            augmented_data = [aug(d.clone()) for aug in self.augmentations for d in split_data]
+            assert not isinstance(augmented_data[0].batch, Tensor)
         else:
             augmented_data = [aug(data.clone()) for aug in self.augmentations]
+
 
         out, _, _ = collate(
             cls=type(augmented_data[0]),
