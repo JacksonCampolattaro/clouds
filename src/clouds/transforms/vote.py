@@ -45,7 +45,11 @@ class CombineVotes(BaseTransform):
         new_num_nodes = num_nodes // data.num_votes
         assert new_num_nodes
 
-        batch_size = data.batch_size if hasattr(data, 'batch_size') else None
+        batch_size = (
+            data.batch_size
+            if hasattr(data, 'batch_size') #
+            else (data.ptr.size(0) - 1 if hasattr(data, 'ptr') else None)
+        )
         new_batch_size = batch_size // data.num_votes if batch_size else None
 
         # Output will only have one vote's worth of nodes
@@ -82,7 +86,7 @@ class CombineVotes(BaseTransform):
                 out[key] = item[:new_num_nodes]
                 if 'pos' not in data:
                     out.num_nodes = out[key].size(0)
-            elif batch_size and item.size(0) == batch_size:
+            elif batch_size and isinstance(item, Tensor) and item.size(0) == batch_size:
                 out[key] = item[:new_batch_size]
             else:
                 out[key] = item
