@@ -13,9 +13,9 @@ from .cut_select import CutSelect as CutSelect
 from .density import EstimateDensity as EstimateDensity
 from .density import InverseDensitySelect as InverseDensitySelect
 from .discard_attribute import DiscardAttributes as DiscardAttributes
+from .extract import ExtractHeights as ExtractHeights
 from .fps import FurthestPointSample as FurthestPointSample
 from .fps import FurthestPointSelect as FurthestPointSelect
-from .height import ExtractHeights as ExtractHeights
 from .identity import Identity as Identity
 from .knn import KNNSourceGraph as KNNSourceGraph
 from .mix3d import Mix3D as Mix3D
