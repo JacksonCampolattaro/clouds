@@ -49,7 +49,7 @@ class EstimateDensity(BaseTransform):
 
         # Estimate lambda
         # TODO: sampling correction can come after mean pooling
-        approx_lambda = (1 / self.estimation_factor) * self.k / (self.V_d * r_k**2)
+        approx_lambda = (1 / self.estimation_factor) * self.k / (self.V_d * r_k**self.d)
 
         if self.pointwise:
             # Pointwise density doesn't require any pooling step

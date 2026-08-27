@@ -1,83 +1,149 @@
+import math
+
 import pytest
 import torch
 from torch_geometric.data import Batch, Data
 from torch_geometric.typing import WITH_KNN as HAS_PYG_KNN
 
-from clouds.transforms.density import EstimateDensity, InverseDensitySelect
+from clouds.transforms.density import EstimateDensity, InverseDensitySelect, _unit_ball_volume
+
+
+def _uniform_positions(num_points: int, side_length: float, dim: int, seed: int) -> torch.Tensor:
+    """Uniformly distributed points in [0, side_length]^dim with a fixed,
+    generator-local seed (does not disturb global RNG state)."""
+    g = torch.Generator().manual_seed(seed)
+    return torch.rand(num_points, dim, generator=g) * side_length
+
+
+def _make_uniform_data(num_points: int, side_length: float, dim: int, seed: int) -> Data:
+    return Data(pos=_uniform_positions(num_points, side_length, dim, seed))
+
+
+def _true_density(num_points: int, side_length: float, dim: int) -> float:
+    return num_points / (side_length ** dim)
 
 
 class TestEstimateDensity:
-    def test_initialization(self):
+    def setup_method(self):
+        # Reseed global RNG before every test so that any internal
+        # randomness (e.g. inside `RandomSample`, which likely relies on
+        # torch's global generator) is reproducible run-to-run.
+        torch.manual_seed(0)
+
+    # -- sanity / config checks, no kNN required -------------------------- #
+
+    def test_unit_ball_volume_known_values(self):
+        assert _unit_ball_volume(1) == pytest.approx(2.0)
+        assert _unit_ball_volume(2) == pytest.approx(math.pi)
+        assert _unit_ball_volume(3) == pytest.approx(4.0 / 3.0 * math.pi)
+
+    def test_default_configuration(self):
         transform = EstimateDensity()
         assert transform.pointwise is True
-        assert transform.estimation_factor == 0.05
+        assert transform.estimation_factor == pytest.approx(0.05)
         assert transform.k == 15
-        assert transform.V_d > 0
+        assert transform.d == 2
+        assert transform.V_d == pytest.approx(math.pi)
 
-        transform_custom = EstimateDensity(pointwise=False, estimation_factor=0.1, d=3)
-        assert transform_custom.pointwise is False
-        assert transform_custom.estimation_factor == 0.1
-
-    def test_repr(self):
+    def test_forward_requires_pos_attribute(self):
+        data = Data()  # no `pos` set
         transform = EstimateDensity()
-        repr_str = repr(transform)
-        assert "EstimateDensity" in repr_str
-        assert "pointwise=True" in repr_str
-        assert "estimation_factor=0.05" in repr_str
+        with pytest.raises(AssertionError):
+            transform(data)
 
-        transform_custom = EstimateDensity(pointwise=False, estimation_factor=0.1)
-        repr_str = repr(transform_custom)
-        assert "pointwise=False" in repr_str
-        assert "estimation_factor=0.1" in repr_str
-
-    def test_forward_pointwise(self):
-        # Create simple point cloud data
-        pos = torch.randn(100, 3)
-        data = Data(pos=pos)
-
-        transform = EstimateDensity(pointwise=True, estimation_factor=0.2)
-        result = transform(data)
-
-        # Check that density was added
-        assert hasattr(result, 'density')
-        assert isinstance(result.density, torch.Tensor)
-        # Pointwise density should have same number of points
-        assert result.density.shape == (100, 1)
-        # Density values should be positive
-        assert (result.density > 0).all()
+    # -- single cloud, pointwise vs. global -------------------------------- #
 
     @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
-    def test_forward_pooled(self):
-        # Create batched point cloud data
-        pos1 = torch.randn(50, 3)
-        pos2 = torch.randn(60, 3)
-        pos = torch.cat([pos1, pos2], dim=0)
-        batch = torch.cat([torch.zeros(50), torch.ones(60)], dim=0).long()
-        data = Batch(pos=pos, batch=batch, ptr=torch.tensor([0, 50, 110]).long())
+    def test_pointwise_density_single_cloud_matches_known_density(self):
+        num_points, side_length = 6000, 100.0
+        true_density = _true_density(num_points, side_length, dim=2)
 
-        transform = EstimateDensity(pointwise=False, estimation_factor=0.2)
-        result = transform(data)
+        data = _make_uniform_data(num_points, side_length, dim=2, seed=1)
+        torch.manual_seed(1)
+        out = EstimateDensity(pointwise=True, estimation_factor=0.05, d=2)(data)
 
-        # Check that density was added
-        assert hasattr(result, 'density')
-        assert isinstance(result.density, torch.Tensor)
-        # Pooled density should have one value per batch
-        assert result.density.size(0) == 2
-        assert (result.density > 0).all()
+        assert out.density.shape == (num_points, 1)
+        estimated_density = out.density.mean().item()
+
+        # Averaged over thousands of points, so allow moderate error but not
+        # an order of magnitude.
+        assert estimated_density == pytest.approx(true_density, rel=0.2)
 
     @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
-    def test_forward_with_batch(self):
-        # Test with explicit batch and ptr
-        pos = torch.randn(80, 3)
-        batch = torch.tensor([0] * 40 + [1] * 40)
-        data = Batch(pos=pos, batch=batch, ptr=torch.tensor([0, 40, 80]))
+    def test_global_density_single_cloud_matches_known_density(self):
+        num_points, side_length = 6000, 100.0
+        true_density = _true_density(num_points, side_length, dim=2)
 
-        transform = EstimateDensity(pointwise=True, estimation_factor=0.15)
-        result = transform(data)
+        data = _make_uniform_data(num_points, side_length, dim=2, seed=2)
+        torch.manual_seed(2)
+        out = EstimateDensity(pointwise=False, estimation_factor=0.05, d=2)(data)
 
-        assert hasattr(result, 'density')
-        assert result.density.shape == (80, 1)
-        assert (result.density > 0).all()
+        # Non-pointwise on an un-batched cloud pools everything into a
+        # single scalar estimate.
+        assert out.density.numel() == 1
+        estimated_density = out.density.reshape(-1)[0].item()
+
+        assert estimated_density == pytest.approx(true_density, rel=0.2)
+
+    # -- batched clouds, pointwise vs. global ------------------------------ #
+
+    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
+    def test_pointwise_density_batch_recovers_each_graph_density(self):
+        n1, l1 = 4000, 100.0  # true density 0.4
+        n2, l2 = 8000, 100.0  # true density 0.8
+        density1 = _true_density(n1, l1, dim=2)
+        density2 = _true_density(n2, l2, dim=2)
+
+        data1 = _make_uniform_data(n1, l1, dim=2, seed=10)
+        data2 = _make_uniform_data(n2, l2, dim=2, seed=11)
+        batch = Batch.from_data_list([data1, data2])
+
+        torch.manual_seed(10)
+        out = EstimateDensity(pointwise=True, estimation_factor=0.05, d=2)(batch)
+
+        assert out.density.shape == (n1 + n2, 1)
+
+        est_density1 = out.density[batch.batch == 0].mean().item()
+        est_density2 = out.density[batch.batch == 1].mean().item()
+
+        assert est_density1 == pytest.approx(density1, rel=0.2)
+        assert est_density2 == pytest.approx(density2, rel=0.2)
+
+    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
+    def test_global_density_batch_recovers_each_graph_density(self):
+        n1, l1 = 4000, 100.0  # true density 0.4
+        n2, l2 = 8000, 100.0  # true density 0.8
+        density1 = _true_density(n1, l1, dim=2)
+        density2 = _true_density(n2, l2, dim=2)
+
+        data1 = _make_uniform_data(n1, l1, dim=2, seed=20)
+        data2 = _make_uniform_data(n2, l2, dim=2, seed=21)
+        batch = Batch.from_data_list([data1, data2])
+
+        torch.manual_seed(20)
+        out = EstimateDensity(pointwise=False, estimation_factor=0.05, d=2)(batch)
+
+        assert out.density.numel() == 2
+
+        est_density1 = out.density.reshape(-1)[0].item()
+        est_density2 = out.density.reshape(-1)[1].item()
+
+        assert est_density1 == pytest.approx(density1, rel=0.35)
+        assert est_density2 == pytest.approx(density2, rel=0.35)
+
+
+    @pytest.mark.skipif(not HAS_PYG_KNN, reason="PyG kNN not installed")
+    def test_global_density_3d_matches_known_density(self):
+        num_points, side_length, d = 6000, 20.0, 3
+        true_density = _true_density(num_points, side_length, dim=d)
+
+        data = _make_uniform_data(num_points, side_length, dim=d, seed=31)
+        torch.manual_seed(31)
+        out = EstimateDensity(pointwise=False, estimation_factor=0.05, d=d)(data)
+
+        estimated_density = out.density.reshape(-1)[0].item()
+
+        assert estimated_density == pytest.approx(true_density, rel=0.35)
 
 
 class TestInverseDensitySelect:

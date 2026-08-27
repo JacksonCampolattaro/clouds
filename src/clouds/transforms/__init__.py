@@ -5,6 +5,7 @@ from .ball import BallGraph as BallGraph
 from .block_select import BlockSample as BlockSample
 from .block_select import BlockSelect as BlockSelect
 from .center import CenterPoints as CenterPoints
+from .center import GroundPoints as GroundPoints
 from .cluster import ClusterSample as ClusterSample
 from .cluster import ClusterSelect as ClusterSelect
 from .color import RandomColorAutoContrast as RandomColorAutoContrast
