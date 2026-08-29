@@ -115,10 +115,15 @@ def _nanoflann_knn(
     if batch is not None:
         # FIXME: offset should be based on largest value in _either_ pos or query
         # This will probably come back to bite me someday
-        offset = 2 * (pos.amax(dim=0, keepdim=True) - pos.amin(dim=0, keepdim=True))
-        pos = pos + batch.unsqueeze(-1) * offset
+        offset_axis = -1
+        max_graph_size = (pos[:, offset_axis].amax() - pos[:, offset_axis].amin()) * 2
+        offsets = torch.zeros_like(pos)
+        offsets[:, offset_axis] = batch * max_graph_size
+        pos = pos + offsets
         if query_pos is not None:
-            query_pos = query_pos + query_batch.unsqueeze(-1) * offset
+            query_offsets = torch.zeros_like(query_pos)
+            query_offsets[:, offset_axis] = query_batch * max_graph_size
+            query_pos = query_pos + query_offsets
 
     kdtree = _cached_kdtree(pos)
     distances, indices = kdtree.kneighbors(
