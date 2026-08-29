@@ -49,4 +49,4 @@ class ExtractCoords(BaseTransform):
         return data
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(dims={self.dims}, ground={self.ground}, scale=self.scale)'
+        return f'{self.__class__.__name__}(dims={self.dims}, ground={self.ground}, scale={self.scale})'

@@ -19,19 +19,26 @@ except (ImportError, RuntimeError):
 class VoxelCluster(BaseTransform):
     """Apply voxel clustering to point cloud data."""
 
-    def __init__(self, voxel_size: float | tuple[float, float]) -> None:
+    def __init__(self, voxel_size: float | tuple[float, float], large_voxel_prob: float = 0.5) -> None:
         self.voxel_size = voxel_size
+        self.large_voxel_prob = large_voxel_prob
 
     def forward(self, data: Data) -> Data:
         assert isinstance(data.pos, Tensor)
 
         # Determine voxel size
-        voxel_size = random.uniform(*self.voxel_size) if isinstance(self.voxel_size, tuple) else self.voxel_size
+        def get_voxel_size() -> float:
+            if isinstance(self.voxel_size, tuple):
+                if random.random() > self.large_voxel_prob:
+                    return self.voxel_size[0]
+                return random.uniform(*self.voxel_size)
+            return self.voxel_size
 
         # Create clusters (global IDs, offset per batch)
-        cluster = voxel_grid(data.pos, voxel_size, data.batch)
+        cluster = voxel_grid(data.pos, get_voxel_size(), data.batch)
 
         # Remap to contiguous, sequential IDs (0 .. num_clusters-1)
+        # FIXME: do not reorder!
         unique_clusters = torch.unique(cluster)
         data.num_clusters = unique_clusters.size(0)
         data.cluster_index = torch.searchsorted(unique_clusters, cluster)
@@ -77,18 +84,32 @@ class VoxelSelect(BaseTransform):
             return self.voxel_size
 
         # Apply subsampling
-        if data.pos.is_cpu and not isinstance(data.batch, Tensor) and HAS_VPSAMPLE:
-            data.selection_index = voxel_subsample(
-                data.pos,
-                voxel_size=get_voxel_size(),
-                hash_size=self.hash_size,
-                # FIXME: broken for deterministic sampling on small point clouds!
-                pick=pick if self.deterministic else None,
-            )
+        if data.pos.is_cpu and HAS_VPSAMPLE:
+            if isinstance(data.batch, Tensor):
+                batch_size = data.batch_size if hasattr(data, 'batch_size') else torch.amax(data.batch) + 1
+                voxel_sizes = torch.tensor([get_voxel_size() for _ in range(batch_size)], device=data.pos.device)
+                scaled_pos = data.pos * (1 / voxel_sizes)[data.batch, None]
+                offset = 2 * (scaled_pos.amax(dim=0, keepdim=True) - scaled_pos.amin(dim=0, keepdim=True))
+                data.selection_index = voxel_subsample(
+                    scaled_pos + data.batch.unsqueeze(-1) * offset,
+                    voxel_size=1.0,
+                    # FIXME: broken for deterministic sampling on small point clouds!
+                    pick=pick if self.deterministic else None,
+                )
+            else:
+                data.selection_index = voxel_subsample(
+                    data.pos,
+                    voxel_size=get_voxel_size(),
+                    hash_size=self.hash_size,
+                    # FIXME: broken for deterministic sampling on small point clouds!
+                    pick=pick if self.deterministic else None,
+                )
         else:
+            if isinstance(data.batch, Tensor):
+                assert not isinstance(self.voxel_size, tuple)
             data = Compose(
                 [
-                    VoxelCluster(voxel_size=get_voxel_size()),
+                    VoxelCluster(voxel_size=self.voxel_size, large_voxel_prob=self.large_voxel_prob),
                     ClusterSelect(pick=pick if self.deterministic else None),
                 ]
             )(data)
