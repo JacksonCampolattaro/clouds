@@ -89,12 +89,20 @@ class VoxelSelect(BaseTransform):
                 batch_size = data.batch_size if hasattr(data, 'batch_size') else torch.amax(data.batch) + 1
                 voxel_sizes = torch.tensor([get_voxel_size() for _ in range(batch_size)], device=data.pos.device)
                 scaled_pos = data.pos * (1 / voxel_sizes)[data.batch, None]
-                offset = 2 * (scaled_pos.amax(dim=0, keepdim=True) - scaled_pos.amin(dim=0, keepdim=True))
-                data.selection_index = voxel_subsample(
-                    scaled_pos + data.batch.unsqueeze(-1) * offset,
-                    voxel_size=1.0,
-                    # FIXME: broken for deterministic sampling on small point clouds!
-                    pick=pick if self.deterministic else None,
+                offset_axis = -1
+                max_graph_size = scaled_pos[:, offset_axis].amax() - scaled_pos[:, offset_axis].amin() + 1
+                offsets = torch.zeros_like(data.pos)
+                offsets[:, offset_axis] = data.batch * max_graph_size
+
+                data.selection_index = (
+                    voxel_subsample(
+                        scaled_pos + offsets,
+                        voxel_size=1.0,
+                        # FIXME: broken for deterministic sampling on small point clouds!
+                        pick=pick if self.deterministic else None,
+                    )
+                    .sort()
+                    .values
                 )
             else:
                 data.selection_index = voxel_subsample(

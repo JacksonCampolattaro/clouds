@@ -223,7 +223,7 @@ class TestVoxelSelect:
         random.seed(7)
 
         n_clouds = 8
-        points_per_cloud = 2500
+        points_per_cloud = 250000
         single_cloud = torch.rand(points_per_cloud, 3) * 5.0
 
         # Duplicate the exact same cloud n_clouds times.
