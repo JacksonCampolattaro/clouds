@@ -23,7 +23,7 @@ class CenterPoints(BaseTransform):
                     dim=0,
                 )
 
-            if isinstance(store.batch, Tensor):
+            if hasattr(store, 'batch') and isinstance(store.batch, Tensor):
                 store.pos[:, self.dims] = store.pos[:, self.dims] - offset[store.batch, None]
             else:
                 store.pos[:, self.dims] = store.pos[:, self.dims] - offset
@@ -49,7 +49,7 @@ class GroundPoints(CenterPoints):
                     dim=0,
                 )
 
-            if isinstance(store.batch, Tensor):
+            if hasattr(store, 'batch') and isinstance(store.batch, Tensor):
                 store.pos[:, self.dims] = store.pos[:, self.dims] - offset[store.batch, None]
             else:
                 store.pos[:, self.dims] = store.pos[:, self.dims] - offset
