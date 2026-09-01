@@ -1,5 +1,7 @@
 import random
 
+import torch
+from torch import Tensor
 from torch_geometric.data import Data
 from torch_geometric.transforms import BaseTransform
 
@@ -11,10 +13,10 @@ class AttributeDropout(BaseTransform):
         self.p = p
 
     def forward(self, data: Data) -> Data:
-        if random.random() > self.p:
-            return data
-
-        if hasattr(data, self.feature):
+        if isinstance(data.batch, Tensor):
+            mask = torch.rand([data.batch_size], device=data.batch.device) < self.p
+            data[self.feature][mask[data.batch]] = 0
+        elif random.random() < self.p:
             data[self.feature].fill_(0)
 
         return data
