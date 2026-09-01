@@ -14,7 +14,8 @@ class AttributeDropout(BaseTransform):
 
     def forward(self, data: Data) -> Data:
         if isinstance(data.batch, Tensor):
-            mask = torch.rand([data.batch_size], device=data.batch.device) < self.p
+            batch_size = data.batch_size if hasattr(data, 'batch_size') else data.batch.amax() + 1
+            mask = torch.rand([batch_size], device=data.batch.device) < self.p
             data[self.feature][mask[data.batch]] = 0
         elif random.random() < self.p:
             data[self.feature].fill_(0)
