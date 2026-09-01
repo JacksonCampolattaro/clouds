@@ -16,7 +16,12 @@ class CenterPoints(BaseTransform):
                 continue
 
             if offset is None:
-                offset = MeanAggregation()(store.pos[:, self.dims], index=store.batch, ptr=getattr(store, 'ptr', None), dim=0)
+                offset = MeanAggregation()(
+                    store.pos[:, self.dims],
+                    index=getattr(store, 'batch', None),
+                    ptr=getattr(store, 'ptr', None),
+                    dim=0,
+                )
 
             if isinstance(store.batch, Tensor):
                 store.pos[:, self.dims] = store.pos[:, self.dims] - offset[store.batch, None]
@@ -37,7 +42,12 @@ class GroundPoints(CenterPoints):
                 continue
 
             if offset is None:
-                offset = MinAggregation()(store.pos[:, self.dims], index=store.batch, ptr=getattr(store, 'ptr', None), dim=0)
+                offset = MinAggregation()(
+                    store.pos[:, self.dims],
+                    index=getattr(store, 'batch', None),
+                    ptr=getattr(store, 'ptr', None),
+                    dim=0,
+                )
 
             if isinstance(store.batch, Tensor):
                 store.pos[:, self.dims] = store.pos[:, self.dims] - offset[store.batch, None]
