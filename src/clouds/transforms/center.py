@@ -1,5 +1,6 @@
 from torch import Tensor
 from torch_geometric.data import Data
+from torch_geometric.nn.aggr import MeanAggregation, MinAggregation
 from torch_geometric.transforms import BaseTransform
 
 
@@ -11,9 +12,15 @@ class CenterPoints(BaseTransform):
     def forward(self, data: Data) -> Data:
         offset = None
         for store in data.node_stores:
-            if isinstance(store.pos, Tensor):
-                if offset is None:
-                    offset = store.pos[:, self.dims].mean(dim=-2, keepdim=True)
+            if not isinstance(store.pos, Tensor):
+                continue
+
+            if offset is None:
+                offset = MeanAggregation()(store.pos[:, self.dims], index=store.batch, ptr=getattr(store, 'ptr', None), dim=0)
+
+            if isinstance(store.batch, Tensor):
+                store.pos[:, self.dims] = store.pos[:, self.dims] - offset[store.batch, None]
+            else:
                 store.pos[:, self.dims] = store.pos[:, self.dims] - offset
 
         return data
@@ -26,9 +33,15 @@ class GroundPoints(CenterPoints):
     def forward(self, data: Data) -> Data:
         offset = None
         for store in data.node_stores:
-            if isinstance(store.pos, Tensor):
-                if offset is None:
-                    offset, _ = store.pos[:, self.dims].min(dim=0)
+            if not isinstance(store.pos, Tensor):
+                continue
+
+            if offset is None:
+                offset = MinAggregation()(store.pos[:, self.dims], index=store.batch, ptr=getattr(store, 'ptr', None), dim=0)
+
+            if isinstance(store.batch, Tensor):
+                store.pos[:, self.dims] = store.pos[:, self.dims] - offset[store.batch, None]
+            else:
                 store.pos[:, self.dims] = store.pos[:, self.dims] - offset
 
         return data
