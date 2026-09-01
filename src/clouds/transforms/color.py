@@ -21,8 +21,7 @@ class RandomColorAutoContrast(BaseTransform):
         scale = 1 / (1e-7 + colmax - colmin)
         alpha = self.blend_factor or torch.rand_like(scale)
         if isinstance(data.batch, Tensor):
-            scale, alpha = scale[data.batch], alpha[data.batch]
-
+            colmin, scale, alpha = colmin[data.batch], scale[data.batch], alpha[data.batch]
         data.color = (1 - alpha + alpha * scale) * data.color - alpha * colmin * scale
         return data
 
