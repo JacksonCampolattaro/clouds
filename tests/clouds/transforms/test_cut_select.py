@@ -75,19 +75,6 @@ class TestCutSelect:
         # max_num_points should take precedence
         assert len(result.selection_index) == 5
 
-    def test_forward_no_selection_when_small(self):
-        """Test that selection is skipped when dataset is small enough."""
-        pos = torch.randn(5, 3)
-        data = Data(pos=pos, num_nodes=5)
-        
-        # Set max_num_points larger than dataset size
-        cut_select = CutSelect(max_num_points=10)
-        result = cut_select.forward(data)
-        
-        # Should return original data without selection_index
-        assert not hasattr(result, 'selection_index')
-        assert result.pos is data.pos
-
     def test_forward_with_sort_by_distance(self, sample_data):
         """Test forward pass with sorting by distance."""
         cut_select = CutSelect(max_num_points=10, sort_by_distance=True)
@@ -229,12 +216,7 @@ class TestCutSelect:
         """Test various combinations of max_num_points and max_ratio."""
         cut_select = CutSelect(max_num_points=max_num_points, max_ratio=max_ratio)
         result = cut_select.forward(sample_data)
-        
-        if expected_count < sample_data.num_nodes:
-            assert len(result.selection_index) == expected_count
-        else:
-            # When count >= data.num_nodes, no selection should be made
-            assert not hasattr(result, 'selection_index')
+        assert len(result.selection_index) == expected_count
 
     def test_forward_consistency_with_same_seed(self, sample_data):
         """Test that results are reproducible with same random seed."""

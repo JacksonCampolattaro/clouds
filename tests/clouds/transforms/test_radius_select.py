@@ -42,13 +42,6 @@ class TestRadiusSelect:
         assert "deterministic=False" in repr_str
         assert "dims=None" in repr_str
 
-    def test_no_selection_when_num_nodes_less_than_max(self, sample_data):
-        """Test that no selection is made when num_nodes <= max_num_points."""
-        transform = RadiusSelect(max_num_points=10)
-        result = transform(sample_data)
-        assert not hasattr(result, 'selection_index')
-        assert result.num_nodes == 10
-
     def test_selection_with_deterministic(self, sample_data):
         """Test deterministic selection (always picks first point)."""
         transform = RadiusSelect(max_num_points=3, deterministic=True)

@@ -1,3 +1,4 @@
+import itertools
 import math
 import random
 
@@ -28,31 +29,42 @@ class RadiusSelect(BaseTransform):
         self.dims = dims
 
     def forward(self, data: Data) -> Data:
-        assert isinstance(data.pos, Tensor) and isinstance(data.num_nodes, int)
-        assert not isinstance(data.batch, Tensor)
-
+        assert isinstance(data.pos, Tensor)
         pos = data.pos if self.dims is None else data.pos[:, self.dims]
 
-        num_points = min(int(data.num_nodes * self.max_ratio), self.max_num_points)
-        if data.num_nodes <= num_points and not math.isfinite(self.max_radius):
-            return data
+        if isinstance(data.batch, Tensor):
+            assert isinstance(data.ptr, Tensor)
+            item_selections = [
+                start + self._select_single(pos[start:end, :])  #
+                for start, end in itertools.pairwise(data.ptr)
+            ]
+            data.selection_index = torch.cat(item_selections, dim=0)
+        else:
+            data.selection_index = self._select_single(pos)
+
+        return data
+
+    def _select_single(self, pos: Tensor) -> Tensor:
+        num_points = min(int(pos.size(0) * self.max_ratio), self.max_num_points)
+        if pos.size(0) == num_points and not math.isfinite(self.max_radius):
+            return torch.arange(num_points, device=pos.device)
 
         # Select a point at random
-        center = pos[random.randrange(0, data.num_nodes), :]
+        center = pos[random.randrange(0, pos.size(0)), :]
         if self.deterministic:
             center = pos[0, :]
 
         distances = torch.linalg.vector_norm(pos - center, dim=-1)
-        data.selection_index = distances.argsort()[:num_points]
+        index = distances.argsort()[:num_points]
         if not self.sort_by_distance:
             # TODO: pyg's index_sort should be faster here!
-            data.selection_index, _ = data.selection_index.sort()
+            index, _ = index.sort()
 
         # If a maximum radius is specified, drop points outside
         if math.isfinite(self.max_radius):
-            data.selection_index = data.selection_index[distances[data.selection_index] < self.max_radius]
+            index = index[distances[index] < self.max_radius]
 
-        return data
+        return index
 
     def __repr__(self) -> str:
         return (

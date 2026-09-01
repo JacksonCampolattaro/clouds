@@ -59,3 +59,6 @@ class Mix3D(BaseTransform):
                 keep[i] = False
                 skip_next = True  # force-keep the next one
         return keep
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(p={self.p})"
