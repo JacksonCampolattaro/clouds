@@ -26,12 +26,9 @@ class ModelNetC(InMemoryDataset):
         self,
         root: str,
         split: str = 'clean',
-        transform: Callable | None = None,
-        pre_transform: Callable | None = None,
-        pre_filter: Callable | None = None,
         **kwargs,
     ):
-        super().__init__(root, transform, pre_transform, pre_filter, **kwargs)
+        super().__init__(root, **kwargs)
         assert 'train' not in split
         split = 'clean' if split == 'val' else split
         self.data, self.slices = torch.load(os.path.join(self.processed_dir, f'{split}.pt'), weights_only=False)

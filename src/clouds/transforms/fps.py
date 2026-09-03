@@ -102,7 +102,13 @@ class FurthestPointSelect(BaseTransform):
             selection_size,
             deterministic=self.deterministic,
             batch=data.batch,
-            batch_size=data.batch_size,
+            batch_size=(
+                data.batch_size
+                if hasattr(data, 'batch_size')
+                else (data.batch.amax() + 1)
+                if isinstance(data.batch, Tensor)
+                else None
+            ),
         )
         return data
 
