@@ -261,6 +261,8 @@ class TestCombineVotes:
         )
         data['author'].y = torch.tensor([1, 0, 1, 1, 0, 1, 1, 0, 1])
 
+        data['author', 'of', 'paper'].edge_index = torch.zeros([2 * 3, 4])
+
         transform = CombineVotes()
         result = transform(data)
 

@@ -45,8 +45,8 @@ class CombineVotes(BaseTransform):
         self.combine = combine
 
     def forward(self, data: Data) -> Data:
-        assert hasattr(data, 'num_votes')
 
+        assert hasattr(data, 'num_votes')
         batch_size = (
             data.batch_size
             if hasattr(data, 'batch_size') #
@@ -82,16 +82,15 @@ class CombineVotes(BaseTransform):
 
             # Node features
             for store in data.node_stores:
-                num_nodes = store.num_nodes
-                new_num_nodes = num_nodes // data.num_votes
+                new_num_nodes = store.num_nodes // data.num_votes
 
                 for key, item in store.items():
                     if key == 'pred':
                         out[store._key][key] = merge_preds(item)
-                    elif 'index' in key:
-                        # Drop stale index/cluster bookkeeping fields
+                    elif 'index' in key or key == 'ptr':
+                        # Drop stale bookkeeping fields
                         pass
-                    elif isinstance(item, Tensor) and item.size(0) == num_nodes:
+                    elif isinstance(item, Tensor) and item.size(0) == store.num_nodes:
                         out[store._key][key] = item[:new_num_nodes]
                         if 'pos' not in data:
                             out[store._key].num_nodes = out[store._key][key].size(0)
@@ -102,8 +101,11 @@ class CombineVotes(BaseTransform):
 
             # Edge features
             for store in data.edge_stores:
-                if key == 'edge_index':
-                    print(store._key)
+                (_src, _to, dest) = store._key
+                for key, item in store.items():
+                    if key == 'edge_index':
+                        assert item.size(0) == data[dest].num_nodes  # Only works on kNN-formatted edges
+                        out[store._key][key] = item[: out[dest].num_nodes]
 
         else:
             num_nodes = data.num_nodes
