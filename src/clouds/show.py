@@ -147,30 +147,27 @@ def register_nodes(
             continue
 
         # Broadcast batch-global features to all points (maybe unnecessary?)
-        if len(item.shape) == 0:
+        if not item.dim():
             item = item.unsqueeze(0).repeat(num_nodes)
 
         # Broadcast instance-global features to all points
-        if hasattr(nodes, 'batch') and item.size(0) == (nodes.batch.amax() + 1):
-            item = item[nodes.batch]
-        else:
-            if item.size(0) == 1:
+        if item.size(0) != num_nodes:
+            if hasattr(nodes, 'batch') and item.size(0) == (nodes.batch.amax() + 1):
+                item = item[nodes.batch]
+            elif item.size(0) == 1:
                 item = item.repeat(num_nodes)
+            elif isinstance(item, Index) or key == 'selection_index':
+                mask = torch.zeros([num_nodes], dtype=item.dtype, device=nodes.pos.device)
+                mask[item] = 1
+                item = mask
+                cloud.add_scalar_quantity(key, item.cpu(), cmap='reds', enabled=False)
+                continue
             else:
                 warnings.warn(
                     "Cannot draw feature with dimension 0 of size {item.size(0)} that doesn't match batch or node count.",
                     stacklevel=2,
                 )
                 continue
-
-        # Convert selection indices to masks
-        # FIXME: maybe remove this?
-        if isinstance(item, Index):
-            mask = torch.zeros([num_nodes], dtype=item.dtype, device=nodes.pos.device)
-            mask[item] = 1
-            item = mask
-            cloud.add_scalar_quantity(key, item.cpu(), cmap='reds', enabled=False)
-            continue
 
         if 'norm' in key:
             # Norms are drawn as vectors
@@ -194,7 +191,7 @@ def register_nodes(
                 # Continuous values are drawn with a selected color scheme
                 cloud.add_scalar_quantity(key, item.cpu(), cmap=SCALAR_COLORSCHEME)
 
-        elif 'color' in key and item.shape[1] == 3:
+        elif 'color' in key and item.size(1) == 3:
             # Assumes colors values are between 0..1
             cloud.add_color_quantity(key, item.cpu())
 
