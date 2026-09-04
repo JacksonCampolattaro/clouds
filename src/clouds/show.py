@@ -152,6 +152,8 @@ def register_nodes(
         # Broadcast instance-global features to all points
         if hasattr(nodes, 'batch') and item.size(0) == (nodes.batch.amax() + 1):
             item = item[nodes.batch]
+        elif item.size(0) == 1:
+            item = item.unsqueeze(0).repeat(num_nodes)
 
         # Convert selection indices to masks
         # FIXME: maybe remove this?
