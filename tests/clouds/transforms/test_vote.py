@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 import torch
-from torch_geometric.data import Batch, Data
+from torch_geometric.data import Batch, Data, HeteroData
 from torch_geometric.transforms import BaseTransform
 
 from clouds.transforms import CombineVotes, Identity, VoteAugmentations
@@ -231,3 +231,74 @@ class TestCombineVotes:
         expected_mean = torch.tensor([[0.1333, 0.3000, 0.5667]])
         assert torch.allclose(result.pred, expected_mean, rtol=1e-3)
     
+    from torch_geometric.data import HeteroData
+
+
+    def test_forward_hetero_basic(self):
+        """Each node store's tensors should be combined independently of the others."""
+        data = HeteroData()
+        data.num_votes = 3
+
+        # 'paper' node store: 2 nodes, 3 votes
+        data['paper'].x = torch.randn(2*3, 4)
+        data['paper'].pred = torch.tensor(
+            [
+                [0.1, 0.2, 0.7], [0.3, 0.4, 0.3],  # Vote 0
+                [0.2, 0.3, 0.5], [0.1, 0.6, 0.3],  # Vote 1
+                [0.1, 0.4, 0.5], [0.2, 0.3, 0.5],  # Vote 2
+            ]
+        )
+        data['paper'].y = torch.tensor([0, 1, 0, 1, 0, 1])  # reshape(3, -1)[0] -> [0, 1]
+
+        # 'author' node store: 3 nodes, 3 votes, independent values
+        data['author'].x = torch.randn(3*3, 4)
+        data['author'].pred = torch.tensor(
+            [
+                [0.4, 0.3, 0.3], [0.2, 0.5, 0.3], [0.1, 0.1, 0.8],
+                [0.3, 0.4, 0.3], [0.3, 0.4, 0.3], [0.2, 0.2, 0.6],
+                [0.5, 0.2, 0.3], [0.1, 0.6, 0.3], [0.3, 0.3, 0.4],
+            ]
+        )
+        data['author'].y = torch.tensor([1, 0, 1, 1, 0, 1, 1, 0, 1])
+
+        transform = CombineVotes()
+        result = transform(data)
+
+        # 'paper' store combined correctly
+        expected_paper_pred = data['paper'].pred.reshape(3, -1, data['paper'].pred.size(-1)).mean(dim=0)
+        assert torch.allclose(result['paper'].pred, expected_paper_pred)
+        expected_paper_y = data['paper'].y.reshape(3, -1)[0]
+        assert torch.equal(result['paper'].y, expected_paper_y)
+
+        # 'author' store combined independently and correctly
+        expected_author_pred = data['author'].pred.reshape(3, -1, data['author'].pred.size(-1)).mean(dim=0)
+        assert torch.allclose(result['author'].pred, expected_author_pred)
+        expected_author_y = data['author'].y.reshape(3, -1)[0]
+        assert torch.equal(result['author'].y, expected_author_y)
+
+    def test_forward_hetero_batched_node_stores(self):
+        """Batched (multi-graph) node-level pred should be averaged per graph, per store."""
+        data = HeteroData()
+        data.num_votes = 2
+
+        # 'paper' store: 2 graphs, vote-major ordering (2 nodes then 3 nodes, x2 votes)
+        pred_vote1_g1 = torch.tensor([[0.1, 0.2, 0.7], [0.3, 0.4, 0.3]])
+        pred_vote1_g2 = torch.tensor([[0.2, 0.3, 0.5], [0.1, 0.6, 0.3], [0.4, 0.3, 0.3]])
+        pred_vote2_g1 = torch.tensor([[0.15, 0.25, 0.6], [0.35, 0.35, 0.3]])
+        pred_vote2_g2 = torch.tensor([[0.25, 0.35, 0.4], [0.15, 0.55, 0.3], [0.45, 0.25, 0.3]])
+
+        data['paper'].pred = torch.cat(
+            [pred_vote1_g1, pred_vote1_g2, pred_vote2_g1, pred_vote2_g2], dim=0
+        )
+        data['paper'].batch = torch.tensor([0, 0, 1, 1, 1, 2, 2, 3, 3, 3])
+        data['paper'].x = torch.randn(10, 5)
+
+        transform = CombineVotes()
+        result = transform(data)
+
+        expected_g1 = (pred_vote1_g1 + pred_vote2_g1) / 2
+        expected_g2 = (pred_vote1_g2 + pred_vote2_g2) / 2
+        expected_pred = torch.cat([expected_g1, expected_g2], dim=0)
+
+        assert torch.allclose(result['paper'].pred, expected_pred)
+
