@@ -75,7 +75,7 @@ class CombineVotes(BaseTransform):
         if isinstance(data, HeteroData):
             # Global features
             for key, item in data._global_store.items():
-                if isinstance(item, Tensor) and item.dim() == 1 and item.size(0) == batch_size:
+                if isinstance(item, Tensor) and item.dim() and item.size(0) == batch_size:
                     out[key] = item[:new_batch_size]
                 else:
                     out[key] = item
@@ -90,11 +90,11 @@ class CombineVotes(BaseTransform):
                     elif 'index' in key or key == 'ptr':
                         # Drop stale bookkeeping fields
                         pass
-                    elif isinstance(item, Tensor) and item.size(0) == store.num_nodes:
+                    elif isinstance(item, Tensor) and item.dim() and item.size(0) == store.num_nodes:
                         out[store._key][key] = item[:new_num_nodes]
                         if 'pos' not in data:
                             out[store._key].num_nodes = out[store._key][key].size(0)
-                    elif isinstance(item, Tensor) and item.size(0) == batch_size:
+                    elif isinstance(item, Tensor) and item.dim() and item.size(0) == batch_size:
                         out[store._key][key] = item[:new_batch_size]
                     else:
                         out[store._key][key] = item
@@ -121,6 +121,8 @@ class CombineVotes(BaseTransform):
                 elif 'index' in key:
                     # Drop stale index/cluster bookkeeping fields
                     pass
+                elif isinstance(item, Tensor) and not item.dim():
+                    out[key] = item
                 elif data.is_edge_attr(key) or key in ('ptr',):
                     # Drop invalidated edge attributes
                     # TODO: handle this correctly
@@ -129,7 +131,7 @@ class CombineVotes(BaseTransform):
                     out[key] = item[:new_num_nodes]
                     if 'pos' not in data:
                         out.num_nodes = out[key].size(0)
-                elif isinstance(item, Tensor) and len(item.shape) == 1 and item.size(0) == batch_size:
+                elif isinstance(item, Tensor) and item.dim() and item.size(0) == batch_size:
                     out[key] = item[:new_batch_size]
                 else:
                     out[key] = item
