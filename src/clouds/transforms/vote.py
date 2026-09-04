@@ -87,7 +87,7 @@ class CombineVotes(BaseTransform):
                 for key, item in store.items():
                     if key == 'pred':
                         out[store._key][key] = merge_preds(item)
-                    elif 'index' in key or key == 'ptr':
+                    elif '_index' in key or key == 'ptr':
                         # Drop stale bookkeeping fields
                         pass
                     elif isinstance(item, Tensor) and item.dim() and item.size(0) == store.num_nodes:
@@ -118,7 +118,7 @@ class CombineVotes(BaseTransform):
                     out[key] = item[:new_num_nodes]
                 elif key == 'pred':
                     out[key] = merge_preds(item)
-                elif 'index' in key:
+                elif '_index' in key:
                     # Drop stale index/cluster bookkeeping fields
                     pass
                 elif isinstance(item, Tensor) and not item.dim():

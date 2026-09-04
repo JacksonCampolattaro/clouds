@@ -1,4 +1,5 @@
 import math
+import warnings
 
 import polyscope as ps
 import torch
@@ -152,8 +153,15 @@ def register_nodes(
         # Broadcast instance-global features to all points
         if hasattr(nodes, 'batch') and item.size(0) == (nodes.batch.amax() + 1):
             item = item[nodes.batch]
-        elif item.size(0) == 1:
-            item = item.repeat(num_nodes)
+        else:
+            if item.size(0) == 1:
+                item = item.repeat(num_nodes)
+            else:
+                warnings.warn(
+                    "Cannot draw feature with dimension 0 of size {item.size(0)} that doesn't match batch or node count.",
+                    stacklevel=2,
+                )
+                continue
 
         # Convert selection indices to masks
         # FIXME: maybe remove this?
