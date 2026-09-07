@@ -164,7 +164,7 @@ def register_nodes(
                 continue
             else:
                 warnings.warn(
-                    "Cannot draw feature with dimension 0 of size {item.size(0)} that doesn't match batch or node count.",
+                    f"Cannot draw feature with dimension 0 of size {item.size(0)} that doesn't match batch or node count.",
                     stacklevel=2,
                 )
                 continue

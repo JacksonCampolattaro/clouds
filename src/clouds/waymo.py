@@ -201,7 +201,7 @@ def _convert_frames(args):
         return Data(
             pos=torch.cat(points, dim=0),
             intensity=torch.cat(intensities, dim=0).tanh(),
-            y=torch.cat(labels, dim=0)[:, 1] if labels else None,
+            y=torch.cat(labels, dim=0)[:, 1].long() if labels else None,
         )
 
     frame_data_list = []
@@ -290,6 +290,7 @@ class SemanticWaymo(Dataset):
                 data.intensity = torch.cat([data.intensity, aug_data.intensity], dim=0)
                 data.y = torch.cat([data.y, aug_data.y], dim=0)
 
+            data.y = data.y.long()  # FIXME: remove this
             data = data if self.transform is None else self.transform(data)
             return data
 
