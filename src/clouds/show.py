@@ -1,3 +1,4 @@
+import json
 import math
 import warnings
 
@@ -365,6 +366,7 @@ def register_pyg_data(
 @torch.compiler.disable(recursive=True)
 def show_data(
     data: Data,
+    view_file: str | None = None,
     **kwargs,
 ):
     ps.init()
@@ -378,6 +380,21 @@ def show_data(
     with torch.no_grad():
         print(data)
         register_pyg_data(data, **kwargs)
+
+    if view_file is not None:
+        with open(view_file, 'r') as f:
+            view_data = json.load(f)
+         
+        # TODO: add more features here!
+
+        if 'view' in view_data:
+            ps.set_view_from_json(json.dumps(view_data['view']))
+
+        for plane in view_data.get('slice_planes', []):
+            sp = ps.add_scene_slice_plane()
+            sp.set_pose(plane['position'], plane['normal'])
+            if 'active' in plane:
+                sp.set_active(plane['active'])
 
     ps.show()
     ps.remove_all_structures()

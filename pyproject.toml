@@ -29,7 +29,10 @@ dev = [
 
 [tool.uv.sources]
 torch-fpsample = { git = "https://github.com/leonardodalinky/pytorch_fpsample", rev = "be93a08" }
-vpsample = { git = "https://github.com/JacksonCampolattaro/vpsample.git", rev = "ea81ebf" }
+vpsample = { git = "https://github.com/JacksonCampolattaro/vpsample.git", rev = "2f0890b" }
+
+[tool.uv.extra-build-dependencies]
+torch-fpsample = ["torch", "setuptools"]
 
 [build-system]
 requires = ["uv_build>=0.11,<0.12"]
