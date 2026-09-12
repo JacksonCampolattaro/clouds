@@ -1,5 +1,6 @@
 import os
 import random
+import sys
 from typing import Callable, ClassVar, Union
 
 import numpy as np
@@ -185,7 +186,7 @@ class SemanticKITTI(Dataset):
 
 if __name__ == '__main__':
     # data.daic needs to be mounted with sshfs, this is a massive dataset!
-    root = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data.daic', 'SemanticKITTI'))
-    dataset = SemanticKITTI(root=root, split='test')
+    root = os.path.join(os.path.realpath(sys.argv[1]), 'SemanticKITTI')
+    dataset = SemanticKITTI(root=root, split='train')
     print(len(dataset))
     print(dataset.get(0))

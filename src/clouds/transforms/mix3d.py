@@ -7,24 +7,41 @@ from torch_geometric.transforms import BaseTransform
 
 
 class Mix3D(BaseTransform):
-    def __init__(self, p: float = 0.8) -> None:
+    def __init__(self, p: float = 0.8, full_batch: bool = False) -> None:
         super().__init__()
         self.p = p
+        self.full_batch = full_batch
 
     def forward(self, data: Data) -> Data:
         assert isinstance(data.ptr, Tensor)
         batch_size = data.ptr.size(0) - 1
 
         # Boundaries between items will be deleted with probability 
-        new_ptr = data.ptr[
-            torch.cat(
-                [
-                    data.ptr.new_ones(1, dtype=torch.bool),
-                    self._boundary_mask(batch_size - 1, data.ptr.device),
-                    data.ptr.new_ones(1, dtype=torch.bool),
+        if self.full_batch:
+            if random() < self.p:
+                pass
+                new_ptr = data.ptr[
+                    torch.cat(
+                        [
+                            data.ptr.new_ones(1, dtype=torch.bool),
+                            torch.tensor([i % 2 == 1 for i in range(batch_size - 1)], dtype=torch.bool, device=data.ptr.device),
+                            data.ptr.new_ones(1, dtype=torch.bool),
+                        ]
+                    )
                 ]
-            )
-        ]
+            else:
+                new_ptr = data.ptr
+
+        else:
+            new_ptr = data.ptr[
+                torch.cat(
+                    [
+                        data.ptr.new_ones(1, dtype=torch.bool),
+                        self._boundary_mask(batch_size - 1, data.ptr.device),
+                        data.ptr.new_ones(1, dtype=torch.bool),
+                    ]
+                )
+            ]
 
         # Determine which batches are merged-into
         kept_batches = data.batch[new_ptr[:-1]]
