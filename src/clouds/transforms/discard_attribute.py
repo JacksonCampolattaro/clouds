@@ -7,7 +7,7 @@ class DiscardAttributes(BaseTransform):
         super().__init__()
         self.attributes = attributes
 
-    def __call__(self, data: Data) -> Data:
+    def forward(self, data: Data) -> Data:
 
         for attribute in self.attributes:
             for store in data.node_stores:

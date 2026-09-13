@@ -11,7 +11,7 @@ class ScaleAttribute(BaseTransform):
         self.factor = factor
         self.p = p
 
-    def __call__(self, data: Data) -> Data:
+    def forward(self, data: Data) -> Data:
         if random.random() > self.p:
             return data
 
