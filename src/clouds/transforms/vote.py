@@ -15,15 +15,17 @@ class VoteAugmentations(BaseTransform):
 
     def forward(self, data: Data) -> Data:
 
-
         if isinstance(data.batch, Tensor):
             split_data = data.to_data_list()
-            augmented_data = []
             for d in split_data:
                 for store in d.node_stores:
                     store.batch, store.ptr = None, None
-                batch_augmented_data = [aug(d.clone()) for aug in self.augmentations]
-                augmented_data.extend(batch_augmented_data)
+            # Vote-major: all graphs for aug1, then all graphs for aug2, ...
+            augmented_data = [
+                aug(d.clone())
+                for aug in self.augmentations
+                for d in split_data
+            ]
         else:
             augmented_data = [aug(data.clone()) for aug in self.augmentations]
 
@@ -35,7 +37,6 @@ class VoteAugmentations(BaseTransform):
         return out
 
     def __repr__(self) -> str:
-        # TODO: make this prettier?
         return f"{self.__class__.__name__}({self.augmentations})"
 
 

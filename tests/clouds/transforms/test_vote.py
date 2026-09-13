@@ -71,8 +71,8 @@ class TestVoteAugmentations:
         # Batched data with 2 graphs x 2 nodes
         data = Batch.from_data_list(
             [
-                Data(x=torch.tensor([[1.0, 2.0], [3.0, 4.0]]), y=torch.tensor([0, 1])),
-                Data(x=torch.tensor([[5.0, 6.0], [7.0, 8.0]]), y=torch.tensor([1, 0])),
+                Data(x=torch.tensor([[1.0, 2.0], [3.0, 4.0]]), y=torch.tensor([0, 1]), category=torch.tensor(0)),
+                Data(x=torch.tensor([[5.0, 6.0], [7.0, 8.0]]), y=torch.tensor([1, 0]), category=torch.tensor(1)),
             ]
         )
 
@@ -96,6 +96,10 @@ class TestVoteAugmentations:
             ]
         )
 
+        assert augmented.y.shape[0] == 8
+        assert augmented.category.shape[0] == 4
+        assert torch.allclose(augmented.category, torch.tensor([0, 1, 0, 1]))
+
         # Apply CombineVotes
         combine_transform = CombineVotes(combine='mean_logits')
         combined = combine_transform(augmented)
@@ -106,10 +110,14 @@ class TestVoteAugmentations:
         assert combined.x.shape[0] == 4
         assert combined.pred.shape[0] == 4
         assert combined.y.shape[0] == 4
+        assert combined.category.shape[0] == 2
 
         # Check that pred was averaged correctly (mean of the two votes)
         # For each graph, pred should be averaged across votes
         assert torch.allclose(combined.pred, torch.tensor(0.5))
+
+        # Check that categories match input
+        assert torch.allclose(combined.category, data.category)
 
 
 class TestCombineVotes:
@@ -128,6 +136,7 @@ class TestCombineVotes:
                 ]
             ),  # Shape: [num_votes, num_nodes, num_classes]
             y=torch.tensor([0, 1, 1]),  # Shape: [num_votes, num_nodes]
+            category=torch.tensor([1, 1, 1]),  # Shape: [num_votes, num_nodes]
             num_votes=3,
         )
         
@@ -145,6 +154,8 @@ class TestCombineVotes:
         # Check that y was reshaped
         expected_y = data.y.reshape(3, -1)[0]
         assert torch.equal(result.y, expected_y)
+        expected_category = data.category.reshape(3, -1)[0]
+        assert torch.equal(result.category, expected_category)
     
     def test_forward_with_batched_input_from_vote_augmentations(self):
         """Test CombineVotes on batched input from VoteAugmentations."""
