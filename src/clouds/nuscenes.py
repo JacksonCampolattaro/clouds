@@ -59,7 +59,7 @@ class SemanticNuScenes(Dataset):
     def __init__(
         self,
         root: str,
-        split='trainval',
+        split='train',
         transform: Callable | None = None,
         log: bool = True,
         mix3d_p: float = 0,

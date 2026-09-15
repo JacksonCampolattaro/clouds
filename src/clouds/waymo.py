@@ -1,5 +1,4 @@
 import glob
-import warnings
 import io
 import json
 import multiprocessing
@@ -7,6 +6,7 @@ import os
 import random
 import sys
 import urllib
+import warnings
 import zipfile
 import zlib
 from typing import Callable, ClassVar, Union
@@ -243,7 +243,7 @@ class SemanticWaymo(Dataset):
     def __init__(
         self,
         root: str,
-        split='trainval',
+        split='train',
         transform: Callable | None = None,
         log: bool = True,
         mix3d_p: float = 0,
@@ -257,9 +257,9 @@ class SemanticWaymo(Dataset):
         self._data = []
         if 'train' in split:
             self._data.extend(splits['training'])
-        if 'val' in split:
+        if 'val' in split or 'test' in split:
             self._data.extend(splits['validation'])
-        if 'test' in split or 'pred' in split:
+        if 'pred' in split:
             self._data.extend(splits['testing'])
 
     def len(self):
