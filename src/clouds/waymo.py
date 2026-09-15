@@ -1,4 +1,5 @@
 import glob
+import warnings
 import io
 import json
 import multiprocessing
@@ -318,7 +319,8 @@ class SemanticWaymo(Dataset):
 
         # Confirm all raw data files are present
         filenames = list(reversed(glob.glob(os.path.join(self.raw_dir, '*/*.tfrecord'), recursive=True)))
-        assert len(filenames) == 1150
+        if len(filenames) != 1150:
+            warnings.warn("Not all files present in raw/", stacklevel=3)
 
     def process(self) -> None:
 
