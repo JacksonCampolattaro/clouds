@@ -290,7 +290,7 @@ class SemanticWaymo(Dataset):
                 data.intensity = torch.cat([data.intensity, aug_data.intensity], dim=0)
                 data.y = torch.cat([data.y, aug_data.y], dim=0)
 
-            data.y = data.y.long()  # FIXME: remove this
+            data.y = data.y.long() if hasattr(data, 'y') else None  # FIXME: remove this
             data = data if self.transform is None else self.transform(data)
             return data
 
@@ -309,7 +309,7 @@ class SemanticWaymo(Dataset):
             wheel_bytes = resp.read()
 
         os.makedirs(os.path.join(self.raw_dir, 'waymo_open_dataset'), exist_ok=True)
-        open(os.path.join(self.processed_dir, 'waymo_open_dataset', '__init__.py'), 'a').close()
+        open(os.path.join(self.raw_dir, 'waymo_open_dataset', '__init__.py'), 'a').close()
         os.makedirs(os.path.join(self.raw_dir, 'waymo_open_dataset/protos'), exist_ok=True)
         with zipfile.ZipFile(io.BytesIO(wheel_bytes)) as zf:
             for filename in self.proto_files:
