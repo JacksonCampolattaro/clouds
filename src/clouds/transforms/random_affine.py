@@ -120,18 +120,30 @@ class RandomScale(BaseTransform):
         self.p = p
 
     def forward(self, data: Data) -> Data:
-        if random.random() >= self.p:
-            return data
-
         dim = data.node_stores[-1].pos.size(-1)
         device = data.node_stores[0].pos.device
 
-        scaling_matrix = random_scaling_matrix(dim, (self.low, self.high), self.uniform_scaling, device)
-        data = LinearTransformation(scaling_matrix)(data)
-
-        for store in data.node_stores:
-            if self.correct_norm and hasattr(store, 'norm'):
-                store.norm = transform_normals(store.norm, scaling_matrix)
+        if hasattr(data, 'batch') and data.batch is not None:
+            # Batched data: apply different transforms per batch element
+            num_graphs = data.batch.max().item() + 1
+            for i in range(num_graphs):
+                if random.random() >= self.p:
+                    continue
+                mask = data.batch == i
+                scaling_matrix = random_scaling_matrix(dim, (self.low, self.high), self.uniform_scaling, device)
+                data.pos[mask] = data.pos[mask] @ scaling_matrix.T
+                for store in data.node_stores:
+                    if self.correct_norm and hasattr(store, 'norm'):
+                        store.norm[mask] = transform_normals(store.norm[mask], scaling_matrix)
+        else:
+            # Non-batched data
+            if random.random() >= self.p:
+                return data
+            scaling_matrix = random_scaling_matrix(dim, (self.low, self.high), self.uniform_scaling, device)
+            data = LinearTransformation(scaling_matrix)(data)
+            for store in data.node_stores:
+                if self.correct_norm and hasattr(store, 'norm'):
+                    store.norm = transform_normals(store.norm, scaling_matrix)
 
         return data
 
@@ -169,18 +181,30 @@ class RandomRotate(BaseTransform):
         self.p = p
 
     def forward(self, data: Data) -> Data:
-        if random.random() >= self.p:
-            return data
-
         dim = data.node_stores[-1].pos.size(-1)
         device = data.node_stores[0].pos.device
 
-        rotation_matrix = random_rotation_matrix(dim, self.degrees, self.axis, device)
-        data = LinearTransformation(rotation_matrix)(data)
-
-        for store in data.node_stores:
-            if self.correct_norm and hasattr(store, 'norm'):
-                store.norm = transform_normals(store.norm, rotation_matrix)
+        if hasattr(data, 'batch') and data.batch is not None:
+            # Batched data: apply different transforms per batch element
+            num_graphs = data.batch.max().item() + 1
+            for i in range(num_graphs):
+                if random.random() >= self.p:
+                    continue
+                mask = data.batch == i
+                rotation_matrix = random_rotation_matrix(dim, self.degrees, self.axis, device)
+                data.pos[mask] = data.pos[mask] @ rotation_matrix.T
+                for store in data.node_stores:
+                    if self.correct_norm and hasattr(store, 'norm'):
+                        store.norm[mask] = transform_normals(store.norm[mask], rotation_matrix)
+        else:
+            # Non-batched data
+            if random.random() >= self.p:
+                return data
+            rotation_matrix = random_rotation_matrix(dim, self.degrees, self.axis, device)
+            data = LinearTransformation(rotation_matrix)(data)
+            for store in data.node_stores:
+                if self.correct_norm and hasattr(store, 'norm'):
+                    store.norm = transform_normals(store.norm, rotation_matrix)
 
         return data
 
@@ -233,36 +257,53 @@ class RandomScaleAndRotate(BaseTransform):
         self.rotate_prob = rotate_prob
 
     def forward(self, data: Data) -> Data:
-        # Check if we should apply transformations
-        apply_scale = random.random() < self.scale_prob
-        apply_rotate = random.random() < self.rotate_prob
-
-        if not (apply_scale or apply_rotate):
-            return data
-
-        # Get the dimensionality of the point cloud
-        assert data.node_stores[-1].pos is not None
         dim = data.node_stores[-1].pos.size(-1)
         device = data.node_stores[0].pos.device
 
-        # Start with identity matrix
-        transform_matrix = torch.eye(dim, device=device)
+        if hasattr(data, 'batch') and data.batch is not None:
+            # Batched data: apply different transforms per batch element
+            num_graphs = data.batch.max().item() + 1
+            for i in range(num_graphs):
+                apply_scale = random.random() < self.scale_prob
+                apply_rotate = random.random() < self.rotate_prob
 
-        # Generate scaling matrix if needed
-        if apply_scale:
-            transform_matrix = random_scaling_matrix(dim, (self.low, self.high), self.uniform_scaling, device)
+                if not (apply_scale or apply_rotate):
+                    continue
 
-        # Generate rotation matrix if needed
-        if apply_rotate:
-            transform_matrix = random_rotation_matrix(dim, self.degrees, self.axis, device) @ transform_matrix
+                mask = data.batch == i
+                transform_matrix = torch.eye(dim, device=device)
 
-        # Apply the combined transformation
-        data = LinearTransformation(transform_matrix)(data)
+                if apply_scale:
+                    transform_matrix = random_scaling_matrix(dim, (self.low, self.high), self.uniform_scaling, device)
 
-        # Correct normal vectors if necessary
-        for store in data.node_stores:
-            if self.correct_norm and hasattr(store, 'norm'):
-                store.norm = transform_normals(store.norm, transform_matrix)
+                if apply_rotate:
+                    transform_matrix = random_rotation_matrix(dim, self.degrees, self.axis, device) @ transform_matrix
+
+                data.pos[mask] = data.pos[mask] @ transform_matrix.T
+                for store in data.node_stores:
+                    if self.correct_norm and hasattr(store, 'norm'):
+                        store.norm[mask] = transform_normals(store.norm[mask], transform_matrix)
+        else:
+            # Non-batched data
+            apply_scale = random.random() < self.scale_prob
+            apply_rotate = random.random() < self.rotate_prob
+
+            if not (apply_scale or apply_rotate):
+                return data
+
+            transform_matrix = torch.eye(dim, device=device)
+
+            if apply_scale:
+                transform_matrix = random_scaling_matrix(dim, (self.low, self.high), self.uniform_scaling, device)
+
+            if apply_rotate:
+                transform_matrix = random_rotation_matrix(dim, self.degrees, self.axis, device) @ transform_matrix
+
+            data = LinearTransformation(transform_matrix)(data)
+
+            for store in data.node_stores:
+                if self.correct_norm and hasattr(store, 'norm'):
+                    store.norm = transform_normals(store.norm, transform_matrix)
 
         return data
 
