@@ -188,5 +188,6 @@ if __name__ == '__main__':
     # data.daic needs to be mounted with sshfs, this is a massive dataset!
     root = os.path.join(os.path.realpath(sys.argv[1]), 'SemanticKITTI')
     dataset = SemanticKITTI(root=root, split='train')
+    from clouds.show import show_data
     print(len(dataset))
-    print(dataset.get(0))
+    show_data(dataset.get(0))
