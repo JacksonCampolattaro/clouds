@@ -18,26 +18,40 @@ dependencies = [
 ]
 
 [dependency-groups]
+# The project itself only requires `torch>=2.6.0` (see `[project.dependencies]`)
+# so that `clouds` stays installable against older PyTorch/PyG stacks. The dev
+# group pins the accelerator stack this project is actually developed against
+# (PyTorch 2.12 + CUDA 13), which also has to match the prebuilt `pyg-lib`
+# wheels exposed by the PyG index in `uv.toml`.
 dev = [
     "polyscope>=2.6.1",
-    # "pyg-lib>=0.8.0",
+    "pyg-lib>=0.8.0",
     "pykeops>=2.3",
     "pynanoflann>=0.10.0",
     "pytest>=9.1.1",
+    "torch~=2.12.0",
     "torch-fpsample",
     "vpsample",
 ]
 
+# Only git sources live here: both packages are dev-only (so they never enter a
+# consumer's resolution), unlike `torch`/`pyg-lib`. The PyG index and the extra
+# build dependencies are configured in `uv.toml`, because a package's
+# `[tool.uv]` (including `sources`/`index`) is otherwise inherited by projects
+# that consume it as a dependency.
 [tool.uv.sources]
 torch-fpsample = { git = "https://github.com/leonardodalinky/pytorch_fpsample", rev = "be93a08" }
 vpsample = { git = "https://github.com/JacksonCampolattaro/vpsample.git", rev = "2f0890b" }
 
-[tool.uv.extra-build-dependencies]
-torch-fpsample = ["torch", "setuptools"]
-
 [build-system]
 requires = ["uv_build>=0.11,<0.12"]
 build-backend = "uv_build"
+
+[tool.uv.build-backend]
+# Datasets are cached into the package directory at runtime (see the dataset
+# `root`s), alongside the `clouds.data` module. Never bundle those caches into
+# wheels/sdists -- they are large (multi-GB) and machine/user specific.
+source-exclude = [".data", "data/DALES"]
 
 [tool.ruff]
 line-length = 128

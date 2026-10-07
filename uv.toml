@@ -1,0 +1,30 @@
+# Developer-only `uv` configuration.
+#
+# This deliberately lives in `uv.toml` instead of `[tool.uv]` in
+# `pyproject.toml`: `[[tool.uv.index]]` (and `[tool.uv.sources]`) declared in a
+# package's `pyproject.toml` are inherited by every project that consumes the
+# package as a dependency, which would force this toolchain onto consumers that
+# want CPU (or a different CUDA) builds. `uv.toml` is only read for this
+# project's own `uv` commands, so `uv sync --dev` picks up the accelerator
+# stack while `clouds` stays installable with any other accelerator choice.
+#
+# `torch` is intentionally left to the default index: on Linux, PyPI's wheels
+# are the CUDA 13 builds (they depend on `nvidia-*-cu13`), and the dev group
+# pins `torch~=2.12.0`. Pulling torch from an explicit `pytorch-cu130` index
+# here is not an option because `uv.toml` does not support `sources`, and a
+# non-explicit PyTorch index would shadow PyPI for unrelated packages.
+#
+# `pyg-lib` is not published on PyPI at all, so it must come from the PyG wheel
+# index. That flat index contains only PyG extension wheels (`pyg_lib`,
+# `torch_scatter`, `torch_sparse`), so leaving it non-explicit is safe.
+# Note: bump the torch version in the URL whenever the dev `torch` pin changes.
+
+[[index]]
+# Prebuilt PyG extension wheels built against `torch==2.12.0` + CUDA 13.
+name = "pyg-cu130"
+url = "https://data.pyg.org/whl/torch-2.12.0+cu130.html"
+format = "flat"
+
+[extra-build-dependencies]
+torch-fpsample = ["torch~=2.12.0", "setuptools"]
+vpsample = [{ requirement = "torch", match-runtime = true }]
