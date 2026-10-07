@@ -17,7 +17,7 @@ class RandomSelect(BaseTransform):
         selection_factor: float | tuple[float, float] = 1.0,
         min_num_points: int = 1,
         replacement: bool = False,
-    ):
+    ) -> None:
         super().__init__()
         self.max_num_points = max_num_points
         self.min_num_points = min_num_points
@@ -25,7 +25,7 @@ class RandomSelect(BaseTransform):
         self.replacement = replacement
 
     def forward(self, data: Data) -> Data:
-        def _selection_size(n: int):
+        def _selection_size(n: int) -> int:
             selection_factor = (
                 random.uniform(*self.selection_factor)  #
                 if isinstance(self.selection_factor, tuple)
@@ -83,7 +83,7 @@ class RandomSelect(BaseTransform):
 
         return data
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}(*{self.selection_factor}, <{self.max_num_points}, replace={self.replacement})"
 
 
@@ -93,7 +93,7 @@ class RandomSample(RandomSelect):
 
 
 class RandomPointDropout(BaseTransform):
-    def __init__(self, max_dropout=0.9, p: float = 1.0):
+    def __init__(self, max_dropout: float = 0.9, p: float = 1.0) -> None:
         super().__init__()
         self.max_dropout = max_dropout
         self.p = p
@@ -106,5 +106,5 @@ class RandomPointDropout(BaseTransform):
 
         return RandomSample(selection_factor=keep_ratio)(data)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}(<{self.max_dropout}, p={self.p})"

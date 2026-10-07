@@ -7,7 +7,7 @@ from torch_geometric.transforms import BaseTransform
 
 
 class AttributeDropout(BaseTransform):
-    def __init__(self, feature: str, p=0.2):
+    def __init__(self, feature: str, p: float = 0.2) -> None:
         super().__init__()
         self.feature = feature
         self.p = p

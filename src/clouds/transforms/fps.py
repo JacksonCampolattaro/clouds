@@ -81,7 +81,7 @@ class FurthestPointSelect(BaseTransform):
         selection_factor: float = 1.0,
         min_num_points: int = 1,
         deterministic: bool = False,
-    ):
+    ) -> None:
         super().__init__()
         self.max_num_points = max_num_points
         self.selection_factor = selection_factor
@@ -112,7 +112,7 @@ class FurthestPointSelect(BaseTransform):
         )
         return data
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         name = self.__class__.__name__
         return f"{name}(*{self.selection_factor}, <{self.max_num_points}, deterministic={self.deterministic})"
 

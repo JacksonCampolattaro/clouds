@@ -5,7 +5,7 @@ from torch_geometric.transforms import BaseTransform
 
 
 class ScaleAttribute(BaseTransform):
-    def __init__(self, attribute: str, factor: float, p: float = 1.0):
+    def __init__(self, attribute: str, factor: float, p: float = 1.0) -> None:
         super().__init__()
         self.attribute = attribute
         self.factor = factor

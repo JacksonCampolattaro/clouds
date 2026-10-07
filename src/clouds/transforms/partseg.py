@@ -21,7 +21,7 @@ class CategoryClassMask(BaseTransform):
     def __init__(
         self,
         categories_to_classes: Tensor | dict[str, list],
-    ):
+    ) -> None:
         super().__init__()
         if not isinstance(categories_to_classes, Tensor):
             categories_to_classes = class_map_to_table(categories_to_classes)
@@ -52,7 +52,7 @@ class RefinePartSegmentation(BaseTransform):
         categories_to_classes: Tensor | dict[str, list],
         k: int = 10,
         replace_with_neighbors: bool = True,
-    ):
+    ) -> None:
         super().__init__()
         self.k = k
         self.replace_with_neighbors = replace_with_neighbors

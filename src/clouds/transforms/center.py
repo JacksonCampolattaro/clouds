@@ -5,7 +5,7 @@ from torch_geometric.transforms import BaseTransform
 
 
 class CenterPoints(BaseTransform):
-    def __init__(self, dims=None):
+    def __init__(self, dims: list[int] | None = None) -> None:
         super().__init__()
         self.dims = dims or [0, 1, 2]
 

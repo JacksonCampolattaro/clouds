@@ -21,7 +21,7 @@ class EstimateDensity(BaseTransform):
         pointwise: bool = True,
         estimation_factor: float = 0.05,
         d: float = 2,
-    ):
+    ) -> None:
         super().__init__()
         self.pointwise, self.estimation_factor = pointwise, estimation_factor
         self.k = 15
@@ -78,7 +78,7 @@ class InverseDensitySelect(BaseTransform):
     def forward(self, data: Data) -> Data:
         assert isinstance(data.density, Tensor) and data.density.size(0) == data.num_nodes
 
-        def _inverse_density_select(density: Tensor):
+        def _inverse_density_select(density: Tensor) -> Tensor:
             # Can I avoid the argsort? Does it belong here?
             return torch.argsort(torch.multinomial(1 / density, num_samples=density.size(0)))
 

@@ -47,13 +47,16 @@ def _pyg_knn(
         return indices
 
 
-def _diagonal_ranges(batch_x: Tensor = None, batch_y: Tensor = None):
+def _diagonal_ranges(
+    batch_x: Tensor | None = None,
+    batch_y: Tensor | None = None,
+) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor] | None:
     """Encodes the block-diagonal structure associated to a batch vector."""
     # See: https://github.com/getkeops/keops/issues/73
 
     b = max(batch_x.amax(), batch_y.amax()) + 1
 
-    def ranges_slices(batch):
+    def ranges_slices(batch: Tensor) -> tuple[Tensor, Tensor]:
         """Helper function for the diagonal ranges function."""
         Ns = batch.bincount(minlength=b)
         indices = Ns.cumsum(0)
@@ -96,7 +99,7 @@ def _keops_knn(
 
 
 @lru_cache(maxsize=4)
-def _cached_kdtree(pos: Tensor):
+def _cached_kdtree(pos: Tensor) -> "KDTree":
     kdtree = KDTree()
     kdtree.fit(pos.numpy())
     return kdtree
@@ -187,9 +190,9 @@ def knn(
 class KNNSourceGraph(BaseTransform):
     def __init__(
         self,
-        k=25,
+        k: int = 25,
         num_threads: int = 4,
-    ):
+    ) -> None:
         self.k = k
         self.num_threads = num_threads
 

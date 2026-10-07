@@ -19,7 +19,7 @@ class RadiusSelect(BaseTransform):
         sort_by_distance: bool = False,
         deterministic: bool = False,
         dims: list[int] | None = None,
-    ):
+    ) -> None:
         super().__init__()
         self.max_radius = max_radius
         self.max_num_points = max_num_points

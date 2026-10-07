@@ -4,7 +4,7 @@ from torch_geometric.transforms import BaseTransform
 
 
 class RandomJitter(BaseTransform):
-    def __init__(self, sigma=0.01, clip=0.05):
+    def __init__(self, sigma: float = 0.01, clip: float | None = 0.05) -> None:
         super().__init__()
         self.sigma, self.clip = sigma, clip
 

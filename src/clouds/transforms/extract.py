@@ -5,7 +5,7 @@ from torch_geometric.transforms import BaseTransform
 
 
 class ExtractHeights(BaseTransform):
-    def __init__(self, gravity_axis: int = 2, ground: bool = False, scale: float | None = None):
+    def __init__(self, gravity_axis: int = 2, ground: bool = False, scale: float | None = None) -> None:
         super().__init__()
         self.gravity_axis = gravity_axis
         self.ground = ground
@@ -29,7 +29,7 @@ class ExtractHeights(BaseTransform):
 
 
 class ExtractCoords(BaseTransform):
-    def __init__(self, dims: list[int] | None = None, ground: bool = False, scale: float | None = None):
+    def __init__(self, dims: list[int] | None = None, ground: bool = False, scale: float | None = None) -> None:
         super().__init__()
         self.dims = dims
         self.ground = ground

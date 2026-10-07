@@ -5,7 +5,7 @@ from torch_geometric.transforms import BaseTransform
 
 
 class RandomShift(BaseTransform):
-    def __init__(self, max_offset: float | list[float] | Tensor = 1.0, attr: str = 'pos'):
+    def __init__(self, max_offset: float | list[float] | Tensor = 1.0, attr: str = 'pos') -> None:
         super().__init__()
         self.max_offset = torch.tensor(max_offset)
         self.attr = attr

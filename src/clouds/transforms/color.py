@@ -8,7 +8,7 @@ from torch_geometric.transforms import BaseTransform
 
 
 class RandomColorAutoContrast(BaseTransform):
-    def __init__(self, p=0.2, blend_factor=None):
+    def __init__(self, p: float = 0.2, blend_factor: float | None = None) -> None:
         self.p = p
         self.blend_factor = blend_factor
 

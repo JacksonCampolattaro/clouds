@@ -15,7 +15,7 @@ class CutSelect(BaseTransform):
         max_ratio: float = 1.0,
         sort_by_distance: bool = False,
         dims: list[int] | None = None,
-    ):
+    ) -> None:
         super().__init__()
         self.max_num_points = max_num_points
         self.max_ratio = max_ratio

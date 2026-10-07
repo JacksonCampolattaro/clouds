@@ -10,7 +10,7 @@ class AttributeAsFeature(BaseTransform):
         attributes: list[str],
         overwrite: bool = True,
         drop: bool = True,
-    ):
+    ) -> None:
         super().__init__()
         self.attributes = attributes
         self.overwrite = overwrite

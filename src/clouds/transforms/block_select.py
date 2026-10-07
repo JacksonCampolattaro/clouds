@@ -12,7 +12,7 @@ class BlockSelect(BaseTransform):
         max_num_points: int = int(1e9),
         min_num_points: int = 1,
         selection_factor: float = 1.0,
-    ):
+    ) -> None:
         super().__init__()
         self.max_num_points, self.min_num_points = max_num_points, min_num_points
         self.selection_factor = selection_factor
@@ -37,7 +37,7 @@ class BlockSelect(BaseTransform):
             data.selection_index = torch.arange(selection_size, device=data.pos.device)
         return data
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         name = self.__class__.__name__
         return f"{name}(*{self.selection_factor}, <{self.max_num_points})"
 

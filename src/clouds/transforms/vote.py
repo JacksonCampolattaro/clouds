@@ -8,7 +8,7 @@ from torch_geometric.utils import one_hot
 
 
 class VoteAugmentations(BaseTransform):
-    def __init__(self, augmentations: list[BaseTransform]):
+    def __init__(self, augmentations: list[BaseTransform]) -> None:
         super().__init__()
         self.augmentations = augmentations
         assert len(augmentations)
@@ -41,7 +41,7 @@ class VoteAugmentations(BaseTransform):
 
 
 class CombineVotes(BaseTransform):
-    def __init__(self, combine: str = 'mean_logits'):
+    def __init__(self, combine: str = 'mean_logits') -> None:
         super().__init__()
         self.combine = combine
 
@@ -55,7 +55,7 @@ class CombineVotes(BaseTransform):
         )
         new_batch_size = batch_size // data.num_votes if batch_size else None
 
-        def merge_preds(pred: Tensor):
+        def merge_preds(pred: Tensor) -> Tensor:
             # Predictions on the output will be the mean of the votes
             if self.combine == 'mean_logits':
                 return item.reshape(data.num_votes, -1, item.size(-1)).mean(dim=0)

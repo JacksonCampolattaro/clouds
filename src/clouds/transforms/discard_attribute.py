@@ -3,7 +3,7 @@ from torch_geometric.transforms import BaseTransform
 
 
 class DiscardAttributes(BaseTransform):
-    def __init__(self, *attributes: str):
+    def __init__(self, *attributes: str) -> None:
         super().__init__()
         self.attributes = attributes
 
