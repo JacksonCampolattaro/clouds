@@ -1,6 +1,6 @@
 import math
 
-import numpy
+import numpy as np
 import torch_geometric
 from torch import Tensor
 from torch_geometric.data import Data
@@ -23,7 +23,7 @@ def _fpsample_fps(
 ) -> Tensor:
     if not n:
         assert ratio
-        n = numpy.clip(
+        n = np.clip(
             int(ratio * pos.size(0)),
             min=1,
             max=pos.size(0),
@@ -91,7 +91,7 @@ class FurthestPointSelect(BaseTransform):
     def forward(self, data: Data) -> Data:
         assert not isinstance(data.batch, Tensor)
         selection_size = int(data.num_nodes * self.selection_factor)
-        selection_size = numpy.clip(
+        selection_size = np.clip(
             selection_size,
             min=self.min_num_points,
             max=self.max_num_points,

@@ -5,7 +5,7 @@ from torch_geometric.nn.pool import global_add_pool
 from torch_geometric.transforms import BaseTransform
 from torch_geometric.utils import one_hot
 
-from clouds.transforms.knn import knn
+from .knn import knn
 
 
 def class_map_to_table(class_map: dict[str, list]) -> Tensor:

@@ -1,8 +1,8 @@
 from typing import Any
 
 import torch
+from torch_geometric import Index
 from torch_geometric.data import Data
-from torch_geometric.data.data import Index
 
 
 class SourceIndexedData(Data):

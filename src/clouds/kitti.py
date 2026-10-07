@@ -1,7 +1,8 @@
 import os
 import random
 import sys
-from typing import Callable, ClassVar, Union
+from collections.abc import Callable
+from typing import ClassVar
 
 import numpy as np
 import torch
@@ -163,7 +164,7 @@ class SemanticKITTI(Dataset):
 
         return Data(pos=pos, intensity=intensity, y=y)
 
-    def __getitem__(self, idx: Union[int, np.integer, IndexType]) -> Union['Dataset', BaseData]:
+    def __getitem__(self, idx: int | np.integer | IndexType) -> "Dataset | BaseData":
         if (
             isinstance(idx, (int, np.integer))
             or (isinstance(idx, Tensor) and idx.dim() == 0)

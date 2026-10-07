@@ -1,9 +1,9 @@
-from typing import Callable
+from collections.abc import Callable
 
 from torch_geometric.transforms import BaseTransform, Compose
 
 
-def unpack_pipeline(pipeline: list[Callable, str, dict]) -> dict[str, dict[str, BaseTransform | None]]:
+def unpack_pipeline(pipeline: list[Callable | str | dict]) -> dict[str, dict[str, BaseTransform | None]]:
 
     out = dict(
         transform=dict(train=[], val=[], test=[]),

@@ -3,7 +3,6 @@ import os
 import pickle
 import random
 from collections.abc import Callable
-from typing import Callable
 
 import numpy as np
 import torch
@@ -12,7 +11,7 @@ from torch_geometric.data import Data, InMemoryDataset, download_url, extract_zi
 from torch_geometric.data.data import BaseData
 from torch_geometric.io import fs
 
-from clouds.transforms.random_affine import RandomRotate
+from .transforms.random_affine import RandomRotate
 
 IDS_TO_LABELS = {
     0: 'ceiling',

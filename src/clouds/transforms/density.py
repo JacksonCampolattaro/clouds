@@ -7,8 +7,8 @@ from torch_geometric.data import Data
 from torch_geometric.nn.aggr import MeanAggregation
 from torch_geometric.transforms import BaseTransform
 
-from clouds.transforms.knn import knn
-from clouds.transforms.random_select import RandomSample
+from .knn import knn
+from .random_select import RandomSample
 
 
 def _unit_ball_volume(d: float) -> float:

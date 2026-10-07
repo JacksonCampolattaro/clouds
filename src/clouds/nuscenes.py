@@ -2,7 +2,7 @@ import os
 import pickle
 import random
 import sys
-from typing import Callable, Union
+from collections.abc import Callable
 
 import numpy as np
 import torch
@@ -117,7 +117,7 @@ class SemanticNuScenes(Dataset):
 
         return data
 
-    def __getitem__(self, idx: Union[int, np.integer, IndexType]) -> Union['Dataset', BaseData]:
+    def __getitem__(self, idx: int | np.integer | IndexType) -> "Dataset | BaseData":
         if (
             isinstance(idx, (int, np.integer))
             or (isinstance(idx, Tensor) and idx.dim() == 0)

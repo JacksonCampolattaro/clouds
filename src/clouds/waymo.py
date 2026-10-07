@@ -9,7 +9,8 @@ import urllib
 import warnings
 import zipfile
 import zlib
-from typing import Callable, ClassVar, Union
+from collections.abc import Callable
+from typing import ClassVar
 
 import numpy as np
 import torch
@@ -19,7 +20,7 @@ from tfrecord import tfrecord_iterator
 from torch import Tensor
 from torch_geometric.data import Data, Dataset
 from torch_geometric.data.collate import collate
-from torch_geometric.data.data import BaseData, Data
+from torch_geometric.data.data import BaseData  # private path; no public re-export in PyG 2.8
 from torch_geometric.data.dataset import IndexType
 from torch_geometric.data.separate import separate
 
@@ -277,7 +278,7 @@ class SemanticWaymo(Dataset):
             decrement=False,
         )
 
-    def __getitem__(self, idx: Union[int, np.integer, IndexType]) -> Union['Dataset', BaseData]:
+    def __getitem__(self, idx: int | np.integer | IndexType) -> "Dataset | BaseData":
         if (
             isinstance(idx, (int, np.integer))
             or (isinstance(idx, Tensor) and idx.dim() == 0)

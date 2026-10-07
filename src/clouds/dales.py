@@ -1,9 +1,8 @@
 import os
 import os.path as osp
-import shutil
 import sys
 import tarfile
-from typing import Callable, List, Optional
+from collections.abc import Callable
 
 import laspy
 import numpy as np
@@ -34,11 +33,11 @@ class DALES(InMemoryDataset):
         root: str,
         split: str = "train",
         chunk_size: float = 50.0,
-        chunk_stride: Optional[float] = None,
+        chunk_stride: float | None = None,
         min_points: int = 100,
-        transform: Optional[Callable] = None,
-        pre_transform: Optional[Callable] = None,
-        pre_filter: Optional[Callable] = None,
+        transform: Callable | None = None,
+        pre_transform: Callable | None = None,
+        pre_filter: Callable | None = None,
         force_reload: bool = False,
     ):
         if split not in ("train", "test"):
@@ -64,11 +63,11 @@ class DALES(InMemoryDataset):
         self.load(self.processed_paths[0])
 
     @property
-    def raw_file_names(self) -> List[str]:
+    def raw_file_names(self) -> list[str]:
         return [osp.join("train"), osp.join("test")]
 
     @property
-    def processed_file_names(self) -> List[str]:
+    def processed_file_names(self) -> list[str]:
         # Encode every chunking parameter that changes the resulting data
         # in the filename, so that changing them triggers reprocessing
         # instead of silently loading stale chunks.
@@ -123,7 +122,7 @@ class DALES(InMemoryDataset):
         if len(las_files) == 0:
             raise FileNotFoundError(f"No .las files found in {split_dir}.")
 
-        data_list: List[Data] = []
+        data_list: list[Data] = []
         for las_name in las_files:
             las_path = osp.join(split_dir, las_name)
             tile_data = self._read_las_tile(las_path)
@@ -159,7 +158,7 @@ class DALES(InMemoryDataset):
 
         return {"xyz": xyz, "labels": labels, "intensity": intensity}
 
-    def _chunk_tile(self, tile_data: dict, tile_name: str) -> List[Data]:
+    def _chunk_tile(self, tile_data: dict, tile_name: str) -> list[Data]:
         """Split one tile into square (x, y) chunks on a regular grid.
 
         This follows the standard KPConv large-scene chunking approach:
@@ -191,7 +190,7 @@ class DALES(InMemoryDataset):
         if len(y_starts) == 0:
             y_starts = np.array([y_min])
 
-        chunks: List[Data] = []
+        chunks: list[Data] = []
         for i, x0 in enumerate(x_starts):
             x1 = x0 + self.chunk_size
             in_x = (x >= x0) & (x < x1)

@@ -1,5 +1,6 @@
 import os
-from typing import Callable, ClassVar
+from collections.abc import Callable
+from typing import ClassVar
 
 import gdown
 import h5py

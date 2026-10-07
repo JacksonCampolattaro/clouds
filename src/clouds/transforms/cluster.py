@@ -2,10 +2,10 @@ import torch
 from torch import Tensor
 from torch_geometric.data import Data
 from torch_geometric.transforms import BaseTransform
-from torch_geometric.utils._scatter import scatter_argmax
+from torch_geometric.utils._scatter import scatter_argmax  # private helper; no public re-export in PyG 2.8
 
-from clouds.transforms.apply_selection import apply_selection
-from clouds.transforms.knn import knn
+from .apply_selection import apply_selection
+from .knn import knn
 
 
 def _select_random_node_per_cluster(cluster: Tensor) -> Tensor:

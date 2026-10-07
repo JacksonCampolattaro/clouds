@@ -1,4 +1,4 @@
-from random import random
+import random
 
 import torch
 from torch import Tensor
@@ -18,7 +18,7 @@ class Mix3D(BaseTransform):
 
         # Boundaries between items will be deleted with probability 
         if self.full_batch:
-            if random() < self.p:
+            if random.random() < self.p:
                 pass
                 new_ptr = data.ptr[
                     torch.cat(
@@ -72,7 +72,7 @@ class Mix3D(BaseTransform):
             if skip_next:
                 skip_next = False
                 continue
-            if random() < self.p:  # delete this boundary
+            if random.random() < self.p:  # delete this boundary
                 keep[i] = False
                 skip_next = True  # force-keep the next one
         return keep

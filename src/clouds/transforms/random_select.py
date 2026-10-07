@@ -1,13 +1,13 @@
 import itertools
 import random
 
-import numpy
+import numpy as np
 import torch
 from torch import Tensor
 from torch_geometric.data import Data
 from torch_geometric.transforms import BaseTransform
 
-from clouds.transforms.apply_selection import apply_selection
+from .apply_selection import apply_selection
 
 
 class RandomSelect(BaseTransform):
@@ -31,7 +31,7 @@ class RandomSelect(BaseTransform):
                 if isinstance(self.selection_factor, tuple)
                 else self.selection_factor
             )
-            return numpy.clip(int(n * selection_factor), min=self.min_num_points, max=self.max_num_points)
+            return np.clip(int(n * selection_factor), min=self.min_num_points, max=self.max_num_points)
 
         if self.replacement:
             data.selection_index = (

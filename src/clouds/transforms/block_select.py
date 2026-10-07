@@ -3,7 +3,7 @@ from torch import Tensor
 from torch_geometric.data import Data
 from torch_geometric.transforms import BaseTransform
 
-from clouds.transforms.apply_selection import apply_selection
+from .apply_selection import apply_selection
 
 
 class BlockSelect(BaseTransform):

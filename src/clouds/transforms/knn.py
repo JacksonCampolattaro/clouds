@@ -7,7 +7,7 @@ from torch_geometric.data import Data
 from torch_geometric.nn import pool
 from torch_geometric.transforms import BaseTransform
 
-from clouds.data import SourceIndexedData
+from ..data import SourceIndexedData
 
 try:
     HAS_NANOFLANN = True
