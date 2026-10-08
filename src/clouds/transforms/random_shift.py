@@ -11,12 +11,14 @@ class RandomShift(BaseTransform):
         self.attr = attr
 
     def forward(self, data: Data) -> Data:
-        offset = None
-        if isinstance(data[self.attr], Tensor):
-            if offset is None:
-                offset = torch.rand(data[self.attr].size(-1)) * (2 * self.max_offset) - self.max_offset
+        stores = [store for store in data.node_stores if isinstance(store.get(self.attr), Tensor)]
+        if not stores:
+            return data
 
-            data[self.attr] += offset.unsqueeze(0).to(device=data[self.attr].device)
+        offset = torch.rand(stores[0][self.attr].size(-1)) * (2 * self.max_offset) - self.max_offset
+        for store in stores:
+            attribute = store[self.attr]
+            store[self.attr] = attribute + offset.unsqueeze(0).to(device=attribute.device)
 
         return data
 

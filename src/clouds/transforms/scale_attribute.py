@@ -15,8 +15,9 @@ class ScaleAttribute(BaseTransform):
         if random.random() > self.p:
             return data
 
-        if hasattr(data, self.attribute):
-            data[self.attribute] = data[self.attribute] * self.factor
+        for store in data.node_stores:
+            if hasattr(store, self.attribute):
+                store[self.attribute] = store[self.attribute] * self.factor
 
         return data
 

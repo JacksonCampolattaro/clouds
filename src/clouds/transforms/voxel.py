@@ -2,7 +2,7 @@ import random
 
 import torch
 from torch import Tensor
-from torch_geometric.data import Data
+from torch_geometric.data import Data, HeteroData
 from torch_geometric.nn import voxel_grid
 from torch_geometric.transforms import BaseTransform, Compose
 
@@ -24,9 +24,10 @@ class VoxelCluster(BaseTransform):
         self.large_voxel_prob = large_voxel_prob
 
     def forward(self, data: Data) -> Data:
-        assert isinstance(data.pos, Tensor)
+        if not isinstance(data, HeteroData):
+            assert isinstance(data.pos, Tensor)
 
-        # Determine voxel size
+        # Determine voxel size (shared across levels so that clusters stay aligned)
         def get_voxel_size() -> float:
             if isinstance(self.voxel_size, tuple):
                 if random.random() > self.large_voxel_prob:
@@ -34,14 +35,21 @@ class VoxelCluster(BaseTransform):
                 return random.uniform(*self.voxel_size)
             return self.voxel_size
 
-        # Create clusters (global IDs, offset per batch)
-        cluster = voxel_grid(data.pos, get_voxel_size(), data.batch)
+        voxel_size = get_voxel_size()
 
-        # Remap to contiguous, sequential IDs (0 .. num_clusters-1)
-        # FIXME: do not reorder!
-        unique_clusters = torch.unique(cluster)
-        data.num_clusters = unique_clusters.size(0)
-        data.cluster_index = torch.searchsorted(unique_clusters, cluster)
+        for store in data.node_stores:
+            pos = store.get('pos')
+            if not isinstance(pos, Tensor):
+                continue
+
+            # Create clusters (global IDs, offset per batch)
+            cluster = voxel_grid(pos, voxel_size, getattr(store, 'batch', None))
+
+            # Remap to contiguous, sequential IDs (0 .. num_clusters-1)
+            # FIXME: do not reorder!
+            unique_clusters = torch.unique(cluster)
+            store.num_clusters = unique_clusters.size(0)
+            store.cluster_index = torch.searchsorted(unique_clusters, cluster)
 
         return data
 

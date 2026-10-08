@@ -4,6 +4,8 @@ import torch
 from torch_geometric.data import Data
 from torch_geometric.transforms import BaseTransform, LinearTransformation
 
+from .hetero import require_homogeneous
+
 
 def random_scaling_matrix(
     dim: int, scales: tuple[float, float], uniform_scaling: bool = False, device: str | torch.device = 'cpu'
@@ -120,6 +122,7 @@ class RandomScale(BaseTransform):
         self.p = p
 
     def forward(self, data: Data) -> Data:
+        require_homogeneous(data, self.__class__.__name__)
         dim = data.node_stores[-1].pos.size(-1)
         device = data.node_stores[0].pos.device
 
@@ -181,6 +184,7 @@ class RandomRotate(BaseTransform):
         self.p = p
 
     def forward(self, data: Data) -> Data:
+        require_homogeneous(data, self.__class__.__name__)
         dim = data.node_stores[-1].pos.size(-1)
         device = data.node_stores[0].pos.device
 
@@ -257,6 +261,7 @@ class RandomScaleAndRotate(BaseTransform):
         self.rotate_prob = rotate_prob
 
     def forward(self, data: Data) -> Data:
+        require_homogeneous(data, self.__class__.__name__)
         dim = data.node_stores[-1].pos.size(-1)
         device = data.node_stores[0].pos.device
 

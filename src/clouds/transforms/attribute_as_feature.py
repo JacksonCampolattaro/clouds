@@ -1,6 +1,6 @@
 import torch
 from torch import Tensor
-from torch_geometric.data import Data
+from torch_geometric.data import Data, HeteroData
 from torch_geometric.transforms import BaseTransform
 
 
@@ -17,17 +17,25 @@ class AttributeAsFeature(BaseTransform):
         self.drop = drop
 
     def forward(self, data: Data) -> Data:
-        assert isinstance(data.num_nodes, int)
+        for store in data.node_stores:
+            pos = store.get('pos')
+            if not isinstance(pos, Tensor):
+                continue
+            assert isinstance(store.num_nodes, int)
 
-        if not isinstance(data.x, Tensor) or self.overwrite:
-            data.x = torch.zeros([data.num_nodes, 0], dtype=data.pos.dtype, device=data.pos.device)
+            if not isinstance(store.get('x'), Tensor) or self.overwrite:
+                store.x = torch.zeros([store.num_nodes, 0], dtype=pos.dtype, device=pos.device)
 
-        for key in self.attributes:
-            assert hasattr(data, key) and isinstance(data[key], Tensor)
-            assert isinstance(data.x, Tensor)
-            data.x = torch.cat([data.x, data[key].to(dtype=data.x.dtype)], dim=-1)
-            if self.drop:
-                del data[key]
+            for key in self.attributes:
+                attribute = store.get(key)
+                if not isinstance(attribute, Tensor):
+                    # Levels of a multigrid may not all carry the same attributes
+                    assert isinstance(data, HeteroData)
+                    continue
+                assert isinstance(store.x, Tensor)
+                store.x = torch.cat([store.x, attribute.to(dtype=store.x.dtype)], dim=-1)
+                if self.drop:
+                    del store[key]
 
         return data
 

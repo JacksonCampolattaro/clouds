@@ -5,6 +5,8 @@ from torch import Tensor
 from torch_geometric.data import Data
 from torch_geometric.transforms import BaseTransform, Center
 
+from .hetero import require_homogeneous
+
 
 class ClampPos(BaseTransform):
     """Clamp the ``pos`` attribute of every node (or node type) into a box."""
@@ -36,6 +38,7 @@ class NormalizeScale(BaseTransform):
         self.center = Center()
 
     def forward(self, data: Data) -> Data:
+        require_homogeneous(data, self.__class__.__name__)
         data = self.center(data)
 
         assert data.pos is not None

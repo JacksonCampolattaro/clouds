@@ -1,6 +1,6 @@
 import torch
 from torch import Tensor
-from torch_geometric.data import Data
+from torch_geometric.data import Data, HeteroData
 from torch_geometric.transforms import BaseTransform
 
 
@@ -12,17 +12,25 @@ class UnpackSourceGraph(BaseTransform):
     """
 
     def forward(self, data: Data) -> Data:
-        assert isinstance(data.edge_index, Tensor)
-        data.edge_index = torch.stack(
-            [
-                data.edge_index.flatten(),
-                torch.arange(
-                    data.edge_index.size(0),
-                    dtype=data.edge_index.dtype,
-                    device=data.edge_index.device,
-                ).repeat_interleave(data.edge_index.size(1)),
-            ]
-        )
+        if not isinstance(data, HeteroData):
+            assert isinstance(data.edge_index, Tensor)
+
+        for store in data.edge_stores:
+            edge_index = store.get('edge_index')
+            if not isinstance(edge_index, Tensor):
+                continue
+
+            store.edge_index = torch.stack(
+                [
+                    edge_index.flatten(),
+                    torch.arange(
+                        edge_index.size(0),
+                        dtype=edge_index.dtype,
+                        device=edge_index.device,
+                    ).repeat_interleave(edge_index.size(1)),
+                ]
+            )
+
         return data
 
     def __repr__(self) -> str:

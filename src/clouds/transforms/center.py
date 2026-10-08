@@ -12,21 +12,23 @@ class CenterPoints(BaseTransform):
     def forward(self, data: Data) -> Data:
         offset = None
         for store in data.node_stores:
-            if not isinstance(store.pos, Tensor):
+            pos = store.get('pos')
+            if not isinstance(pos, Tensor):
                 continue
 
             if offset is None:
                 offset = MeanAggregation()(
-                    store.pos[:, self.dims],
+                    pos[:, self.dims],
                     index=getattr(store, 'batch', None),
                     ptr=getattr(store, 'ptr', None),
                     dim=0,
                 )
 
-            if hasattr(store, 'batch') and isinstance(store.batch, Tensor):
-                store.pos[:, self.dims] = store.pos[:, self.dims] - offset[store.batch, None]
+            batch = getattr(store, 'batch', None)
+            if isinstance(batch, Tensor):
+                store.pos[:, self.dims] = pos[:, self.dims] - offset[batch]
             else:
-                store.pos[:, self.dims] = store.pos[:, self.dims] - offset
+                store.pos[:, self.dims] = pos[:, self.dims] - offset
 
         return data
 
@@ -38,20 +40,22 @@ class GroundPoints(CenterPoints):
     def forward(self, data: Data) -> Data:
         offset = None
         for store in data.node_stores:
-            if not isinstance(store.pos, Tensor):
+            pos = store.get('pos')
+            if not isinstance(pos, Tensor):
                 continue
 
             if offset is None:
                 offset = MinAggregation()(
-                    store.pos[:, self.dims],
+                    pos[:, self.dims],
                     index=getattr(store, 'batch', None),
                     ptr=getattr(store, 'ptr', None),
                     dim=0,
                 )
 
-            if hasattr(store, 'batch') and isinstance(store.batch, Tensor):
-                store.pos[:, self.dims] = store.pos[:, self.dims] - offset[store.batch, None]
+            batch = getattr(store, 'batch', None)
+            if isinstance(batch, Tensor):
+                store.pos[:, self.dims] = pos[:, self.dims] - offset[batch]
             else:
-                store.pos[:, self.dims] = store.pos[:, self.dims] - offset
+                store.pos[:, self.dims] = pos[:, self.dims] - offset
 
         return data

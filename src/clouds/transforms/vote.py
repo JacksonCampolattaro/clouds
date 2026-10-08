@@ -6,6 +6,8 @@ from torch_geometric.data.collate import collate
 from torch_geometric.transforms import BaseTransform
 from torch_geometric.utils import one_hot
 
+from .hetero import require_homogeneous
+
 
 class VoteAugmentations(BaseTransform):
     def __init__(self, augmentations: list[BaseTransform]) -> None:
@@ -14,6 +16,8 @@ class VoteAugmentations(BaseTransform):
         assert len(augmentations)
 
     def forward(self, data: Data) -> Data:
+
+        require_homogeneous(data, self.__class__.__name__)
 
         if isinstance(data.batch, Tensor):
             split_data = data.to_data_list()

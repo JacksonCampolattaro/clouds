@@ -13,18 +13,27 @@ class RandomColorAutoContrast(BaseTransform):
         self.blend_factor = blend_factor
 
     def forward(self, data: Data) -> Data:
-        if not isinstance(data.batch, Tensor) and random.random() > self.p:
-            return data
+        for store in data.node_stores:
+            color = store.get('color')
+            if not isinstance(color, Tensor):
+                continue
 
-        colmin = MinAggregation()(data.color, index=data.batch, ptr=getattr(data, 'ptr', None), dim=0)
-        colmax = MaxAggregation()(data.color, index=data.batch, ptr=getattr(data, 'ptr', None), dim=0)
-        scale = 1 / (1e-7 + colmax - colmin)
-        alpha = self.blend_factor or torch.rand_like(scale)
-        if isinstance(data.batch, Tensor):
-            if self.p != 1.0:
-                raise NotImplementedError()
-            colmin, scale, alpha = colmin[data.batch], scale[data.batch], alpha[data.batch]
-        data.color = (1 - alpha + alpha * scale) * data.color - alpha * colmin * scale
+            batch = getattr(store, 'batch', None)
+            if not isinstance(batch, Tensor) and random.random() > self.p:
+                continue
+
+            colmin = MinAggregation()(color, index=batch, ptr=getattr(store, 'ptr', None), dim=0)
+            colmax = MaxAggregation()(color, index=batch, ptr=getattr(store, 'ptr', None), dim=0)
+            scale = 1 / (1e-7 + colmax - colmin)
+            alpha = self.blend_factor if self.blend_factor is not None else torch.rand_like(scale)
+            if isinstance(batch, Tensor):
+                if self.p != 1.0:
+                    raise NotImplementedError()
+                colmin, scale = colmin[batch], scale[batch]
+                if isinstance(alpha, Tensor):
+                    alpha = alpha[batch]
+            store.color = (1 - alpha + alpha * scale) * color - alpha * colmin * scale
+
         return data
 
     def __repr__(self) -> str:

@@ -12,15 +12,18 @@ class ExtractHeights(BaseTransform):
         self.scale = scale
 
     def forward(self, data: Data) -> Data:
-        assert isinstance(data.pos, Tensor)
-        data.height = data.pos[:, self.gravity_axis].unsqueeze(-1)
+        for store in data.node_stores:
+            pos = store.get('pos')
+            if not isinstance(pos, Tensor):
+                continue
 
-        if self.ground:
-            assert not isinstance(data.batch, Tensor)
-            data.height = data.height - torch.amin(data.height)
-
-        if self.scale:
-            data.height = data.height * self.scale
+            height = pos[:, self.gravity_axis].unsqueeze(-1)
+            if self.ground:
+                assert not isinstance(getattr(store, 'batch', None), Tensor)
+                height = height - torch.amin(height)
+            if self.scale:
+                height = height * self.scale
+            store.height = height
 
         return data
 
@@ -36,15 +39,18 @@ class ExtractCoords(BaseTransform):
         self.scale = scale
 
     def forward(self, data: Data) -> Data:
-        assert isinstance(data.pos, Tensor)
-        data.coord = data.pos[:, self.dims] if self.dims else data.pos
+        for store in data.node_stores:
+            pos = store.get('pos')
+            if not isinstance(pos, Tensor):
+                continue
 
-        if self.ground:
-            assert not isinstance(data.batch, Tensor)
-            data.coord = data.coord - torch.amin(data.height)
-
-        if self.scale:
-            data.coord = data.coord * self.scale
+            coord = pos[:, self.dims] if self.dims else pos
+            if self.ground:
+                assert not isinstance(getattr(store, 'batch', None), Tensor)
+                coord = coord - torch.amin(coord)
+            if self.scale:
+                coord = coord * self.scale
+            store.coord = coord
 
         return data
 

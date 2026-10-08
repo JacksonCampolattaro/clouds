@@ -5,6 +5,8 @@ from torch import Tensor
 from torch_geometric.data import Data
 from torch_geometric.transforms import BaseTransform
 
+from .hetero import require_homogeneous
+
 
 class Mix3D(BaseTransform):
     def __init__(self, p: float = 0.8, full_batch: bool = False) -> None:
@@ -13,6 +15,7 @@ class Mix3D(BaseTransform):
         self.full_batch = full_batch
 
     def forward(self, data: Data) -> Data:
+        require_homogeneous(data, self.__class__.__name__)
         assert isinstance(data.ptr, Tensor)
         batch_size = data.ptr.size(0) - 1
 

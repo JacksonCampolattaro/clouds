@@ -3,7 +3,8 @@ import math
 
 import torch
 from torch import Tensor
-from torch_geometric.data import Data
+from torch_geometric.data import Data, HeteroData
+from torch_geometric.data.storage import NodeStorage
 from torch_geometric.nn.aggr import MeanAggregation
 from torch_geometric.transforms import BaseTransform
 
@@ -29,19 +30,34 @@ class EstimateDensity(BaseTransform):
         self.V_d = _unit_ball_volume(d)
 
     def forward(self, data: Data) -> Data:
-        assert isinstance(data.pos, Tensor)
+        if not isinstance(data, HeteroData):
+            assert isinstance(data.pos, Tensor)
+
+        for store in data.node_stores:
+            if not isinstance(store.get('pos'), Tensor):
+                continue
+            store.density = self._estimate_density(store)
+
+        return data
+
+    def _estimate_density(self, store: NodeStorage) -> Tensor:
+        # Work on a flat copy so that the intermediate selection does not leak
+        # back onto the (possibly multi-level) store.
+        level = Data()
+        for key, item in store.items():
+            level[key] = item
 
         # Sample some points
         # TODO: use random select!
-        coarse_data = RandomSample(selection_factor=self.estimation_factor, min_num_points=64)(data)
+        coarse_data = RandomSample(selection_factor=self.estimation_factor, min_num_points=64)(level)
 
         # Find distances to the kth nearest neighbors
-        query_data = data if self.pointwise else coarse_data
+        query_data = level if self.pointwise else coarse_data
         distances, _knn = knn(
             pos=coarse_data.pos,
-            batch=coarse_data.batch,
+            batch=coarse_data.get('batch', None),
             query_pos=query_data.pos,
-            query_batch=query_data.batch,
+            query_batch=query_data.get('batch', None),
             k=self.k + 1,
             return_distances=True,
         )
@@ -53,16 +69,14 @@ class EstimateDensity(BaseTransform):
 
         if self.pointwise:
             # Pointwise density doesn't require any pooling step
-            data.density = approx_lambda.unsqueeze(-1)
-        else:
-            data.density = MeanAggregation()(
-                approx_lambda,
-                index=getattr(query_data, 'batch', None),
-                ptr=getattr(query_data, 'ptr', None),
-                dim=0,
-            )
+            return approx_lambda.unsqueeze(-1)
 
-        return data
+        return MeanAggregation()(
+            approx_lambda,
+            index=getattr(query_data, 'batch', None),
+            ptr=getattr(query_data, 'ptr', None),
+            dim=0,
+        )
 
     def __repr__(self) -> str:
         return (

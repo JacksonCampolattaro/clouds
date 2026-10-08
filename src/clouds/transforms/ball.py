@@ -1,8 +1,9 @@
 import torch
 from torch import Tensor
-from torch_geometric.data import Data
+from torch_geometric.data import Data, HeteroData
 from torch_geometric.transforms import BaseTransform
 
+from .hetero import intra_level_stores
 from .knn import knn
 
 
@@ -19,25 +20,32 @@ class BallGraph(BaseTransform):
         self.num_threads = num_threads
 
     def forward(self, data: Data) -> Data:
-        assert isinstance(data.pos, Tensor)
+        if not isinstance(data, HeteroData):
+            assert isinstance(data.pos, Tensor)
 
-        edge_index = knn(
-            data.pos,
-            k=self.k,
-            batch=data.get('batch', None),
-            num_threads=self.num_threads,
-        )
-        dest = torch.arange(
-            edge_index.size(0),
-            device=edge_index.device,
-            dtype=torch.long,
-        ).repeat_interleave(edge_index.size(1))
-        source = edge_index.flatten()
+        for node_store, edge_store in intra_level_stores(data):
+            pos = node_store.get('pos')
+            if not isinstance(pos, Tensor):
+                continue
 
-        dist = torch.linalg.vector_norm(data.pos[dest] - data.pos[source], dim=-1)
-        mask = (dist < self.r).flatten().nonzero().flatten()
+            edge_index = knn(
+                pos,
+                k=self.k,
+                batch=node_store.get('batch', None),
+                num_threads=self.num_threads,
+            )
+            dest = torch.arange(
+                edge_index.size(0),
+                device=edge_index.device,
+                dtype=torch.long,
+            ).repeat_interleave(edge_index.size(1))
+            source = edge_index.flatten()
 
-        data.edge_index = torch.stack([source[mask], dest[mask]], dim=0)
+            dist = torch.linalg.vector_norm(pos[dest] - pos[source], dim=-1)
+            mask = (dist < self.r).flatten().nonzero().flatten()
+
+            edge_store.edge_index = torch.stack([source[mask], dest[mask]], dim=0)
+
         return data
 
     def __repr__(self) -> str:

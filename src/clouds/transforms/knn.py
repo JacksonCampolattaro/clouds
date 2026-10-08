@@ -3,7 +3,7 @@ from functools import lru_cache
 
 import torch
 from torch import Tensor
-from torch_geometric.data import Data
+from torch_geometric.data import Data, HeteroData
 from torch_geometric.nn import pool
 from torch_geometric.transforms import BaseTransform
 
@@ -197,6 +197,18 @@ class KNNSourceGraph(BaseTransform):
         self.num_threads = num_threads
 
     def forward(self, data: Data) -> Data:
+        if isinstance(data, HeteroData):
+            for node_type in data.node_types:
+                store = data[node_type]
+                if isinstance(store.get('pos'), Tensor):
+                    data[node_type, 'to', node_type].edge_index = knn(
+                        store.pos,
+                        k=self.k,
+                        batch=store.get('batch', None),
+                        num_threads=self.num_threads,
+                    )
+            return data
+
         data.edge_index = knn(
             data.pos,
             k=self.k,
