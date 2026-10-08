@@ -1,7 +1,6 @@
 from typing import Any
 
 import torch
-from torch_geometric import Index
 from torch_geometric.data import Data
 
 
@@ -13,17 +12,15 @@ class SourceIndexedData(Data):
 
 
 def unpack_source_indexed_data(data: Data) -> Data:
-    data.edge_index = Index(
-        torch.stack(
-            [
-                data.edge_index.flatten(),
-                torch.arange(
-                    data.edge_index.size(0),
-                    dtype=data.edge_index.dtype,
-                    device=data.edge_index.device,
-                ).repeat_interleave(data.edge_index.size(1)),
-            ]
-        )
+    data.edge_index = torch.stack(
+        [
+            data.edge_index.flatten(),
+            torch.arange(
+                data.edge_index.size(0),
+                dtype=data.edge_index.dtype,
+                device=data.edge_index.device,
+            ).repeat_interleave(data.edge_index.size(1)),
+        ]
     )
     # TODO: handle edge attributes
     return data

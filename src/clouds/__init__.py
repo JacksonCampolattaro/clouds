@@ -2,6 +2,7 @@ import clouds.data as data
 import clouds.datasets as datasets
 import clouds.loader as loader
 import clouds.transforms as transforms
+import clouds.utils as utils
 import clouds.visualization as visualization
 
 from .home import get_home_dir as get_home_dir
@@ -17,5 +18,6 @@ __all__ = [
     'loader',
     'set_home_dir',
     'transforms',
+    'utils',
     'visualization',
 ]

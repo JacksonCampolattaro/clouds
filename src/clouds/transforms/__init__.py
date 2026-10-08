@@ -8,7 +8,12 @@ from .center import CenterPoints as CenterPoints
 from .center import GroundPoints as GroundPoints
 from .cluster import ClusterSample as ClusterSample
 from .cluster import ClusterSelect as ClusterSelect
+from .cluster import NearestSelectionCluster as NearestSelectionCluster
 from .color import RandomColorAutoContrast as RandomColorAutoContrast
+from .crop import CylinderSample as CylinderSample
+from .crop import CylinderSelect as CylinderSelect
+from .crop import SlabSample as SlabSample
+from .crop import SlabSelect as SlabSelect
 from .cut_select import CutCrop as CutCrop
 from .cut_select import CutSelect as CutSelect
 from .density import EstimateDensity as EstimateDensity
@@ -21,6 +26,13 @@ from .fps import FurthestPointSelect as FurthestPointSelect
 from .identity import Identity as Identity
 from .knn import KNNSourceGraph as KNNSourceGraph
 from .mix3d import Mix3D as Mix3D
+from .multigrid import BuildClusterMultiGrid as BuildClusterMultiGrid
+from .multigrid import BuildPhantomMultigrid as BuildPhantomMultigrid
+from .multigrid import BuildSelectionMultiGrid as BuildSelectionMultiGrid
+from .multigrid import FlattenMultigrid as FlattenMultigrid
+from .multigrid import MultiGridTransform as MultiGridTransform
+from .normalize import ClampPos as ClampPos
+from .normalize import NormalizeScale as NormalizeScale
 from .partseg import CategoryClassMask as CategoryClassMask
 from .partseg import RefinePartSegmentation as RefinePartSegmentation
 from .radius_select import RadiusSelect as RadiusSelect
@@ -35,6 +47,9 @@ from .random_select import RandomSample as RandomSample
 from .random_select import RandomSelect as RandomSelect
 from .random_shift import RandomShift as RandomShift
 from .scale_attribute import ScaleAttribute as ScaleAttribute
+from .transfer import EdgesToDownsampleNeighbors as EdgesToDownsampleNeighbors
+from .transfer import KNNUpsampleNeighbors as KNNUpsampleNeighbors
+from .unpack import UnpackSourceGraph as UnpackSourceGraph
 from .vote import CombineVotes as CombineVotes
 from .vote import VoteAugmentations as VoteAugmentations
 from .voxel import VoxelCluster as VoxelCluster
