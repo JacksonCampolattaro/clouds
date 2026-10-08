@@ -1,4 +1,5 @@
 import os
+import sys
 
 import gdown
 import torch
@@ -100,7 +101,7 @@ class FAUSTRemeshed(InMemoryDataset):
 
 
 if __name__ == '__main__':
-    root = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data', 'FAUSTRemeshed'))
+    root = os.path.join(os.path.realpath(sys.argv[1]), 'FAUSTRemeshed')
     dataset = FAUSTRemeshed(root=root)
     print(len(dataset))
     print(dataset.get(0))

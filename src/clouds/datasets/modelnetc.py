@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import ClassVar
 
 import gdown
@@ -70,7 +71,7 @@ class ModelNetC(InMemoryDataset):
 
 
 if __name__ == '__main__':
-    root = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data', 'ModelNetC'))
+    root = os.path.join(os.path.realpath(sys.argv[1]), 'ModelNetC')
     dataset = ModelNetC(root=root, split='clean')
     print(len(dataset))
     print(dataset.get(0))

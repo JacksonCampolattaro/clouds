@@ -1,4 +1,5 @@
 import os
+import sys
 from collections.abc import Callable
 from typing import ClassVar
 
@@ -81,7 +82,7 @@ class ShapeNetC(InMemoryDataset):
 
 
 if __name__ == '__main__':
-    root = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data', 'ShapeNetC'))
+    root = os.path.join(os.path.realpath(sys.argv[1]), 'ShapeNetC')
     dataset = ShapeNetC(root=root, split='clean')
     print(len(dataset))
     print(dataset.get(0))

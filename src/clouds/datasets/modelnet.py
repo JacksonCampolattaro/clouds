@@ -1,4 +1,5 @@
 import os
+import sys
 from collections.abc import Callable
 from typing import ClassVar
 
@@ -68,7 +69,7 @@ class ModelNet40(InMemoryDataset):
 
 
 if __name__ == '__main__':
-    root = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data', 'ModelNet40'))
+    root = os.path.join(os.path.realpath(sys.argv[1]), 'ModelNet40')
     dataset = ModelNet40(root=root)
     print(len(dataset))
     print(dataset.get(0).pos)

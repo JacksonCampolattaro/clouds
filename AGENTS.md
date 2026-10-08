@@ -41,15 +41,40 @@ them.
 - `knn()` picks a backend by device + availability: `pykeops` (CUDA), `pynanoflann` (CPU), else a slow PyG
   fallback with a warning.
 
+## Coding style
+
+- **Annotate everything** in `src/clouds` — parameters and return types, public and private. Every
+  `__init__` ends `-> None`; leave pass-through `**kwargs` unannotated (it already means `Any`).
+- **Modern typing only**: `collections.abc.Callable`, builtin generics (`list[...]`, `dict[...]`), and
+  `X | None` / `X | Y`. Do not use `typing.Optional` / `Union` / `List` / `Callable`; keep only
+  `ClassVar` / `Any` from `typing`. Forward references to names that may not be importable at runtime
+  (e.g. the optional `KDTree`) must be quoted strings.
+- **Imports within `clouds` are relative** (`from .knn import knn`, `from ..data import ...`); external
+  imports stay absolute. `__init__.py` re-exports with the explicit `from .mod import Name as Name` form.
+- **Transforms are thin `BaseTransform` subclasses**: `def forward(self, data: Data) -> Data:` mutates
+  `data` in place and returns it. Selection transforms follow the `*Select` / `*Sample` protocol above.
+- **Batch handling**: detect batching with `isinstance(data.batch, Tensor)`; iterate graphs with
+  `itertools.pairwise(data.ptr)` or `data.batch == i`; pass `getattr(store, 'batch', None)` /
+  `getattr(store, 'ptr', None)` into PyG aggregations; count graphs with
+  `data.batch_size if hasattr(data, 'batch_size') else ...`.
+- **Preconditions use `assert` / `raise`** rather than logging, and `__repr__` follows
+  `f"{self.__class__.__name__}(...)"`.
+- **Optional backends** use the `try: import X` / `except ImportError` + `HAS_*` flag + device check +
+  fallback-with-warning pattern (see `transforms/knn.py`).
+
 ## Datasets
 
-- One loader per file `src/clouds/<name>.py`, re-exported (with aliases) from `clouds/__init__.py`.
-  `dales.py` defines `DALES` but is **not** re-exported from the package.
-- Loaders subclass `InMemoryDataset` and cache processed data into the package tree at runtime
-  (`src/clouds/data/<Name>/`, or `src/clouds/.data/...` for S3DIS). Caches are multi-GB and excluded from
-  wheels via `[tool.uv.build-backend] source-exclude`; never commit them. `.data/`, `data.daic/`, `*.pkl`,
-  and `*.ckpt` are gitignored.
-- Dataset loaders have no unit tests; only `clouds.transforms` is covered.
+- One loader per file `src/clouds/datasets/<name>.py`, re-exported (with aliases) from
+  `clouds/datasets/__init__.py`. The package follows PyG: classes are reached via `clouds.datasets.*`
+  (e.g. `from clouds.datasets import ModelNet40`); `clouds/__init__.py` only exposes the subpackage
+  (`from . import datasets as datasets`) and deliberately does **not** re-export dataset classes.
+  `DALES` is re-exported like the others.
+- Loaders subclass `InMemoryDataset`/`Dataset` and take their data location from the caller. There is no
+  default cache root inside the package; each loader's `__main__` uses `sys.argv[1]` as the data
+  directory (`root = os.path.join(os.path.realpath(sys.argv[1]), '<Name>')`). Never commit downloaded
+  data. `.data/`, `data.daic/`, `*.pkl`, and `*.ckpt` are gitignored.
+- `tests/clouds/datasets/test_dataset_importability.py` checks that every public dataset class in
+  `clouds.datasets` is reachable; the loaders themselves still have no functional tests.
 
 ## Tests
 

@@ -2,6 +2,7 @@ import glob
 import os
 import pickle
 import random
+import sys
 from collections.abc import Callable
 
 import numpy as np
@@ -11,7 +12,7 @@ from torch_geometric.data import Data, InMemoryDataset, download_url, extract_zi
 from torch_geometric.data.data import BaseData
 from torch_geometric.io import fs
 
-from .transforms.random_affine import RandomRotate
+from ..transforms.random_affine import RandomRotate
 
 IDS_TO_LABELS = {
     0: 'ceiling',
@@ -230,7 +231,7 @@ if __name__ == '__main__':
 
     from clouds.data import ThreadingDataLoader
 
-    root = os.path.realpath(os.path.join(os.path.dirname(__file__), '.data', 'S3DIS'))
+    root = os.path.join(os.path.realpath(sys.argv[1]), 'S3DIS')
     dataset = S3DIS(root=root, split='train')
     print(len(dataset))
     print(dataset.get(0))

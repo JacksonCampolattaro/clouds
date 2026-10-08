@@ -1,4 +1,5 @@
 import os
+import sys
 from collections.abc import Callable
 from typing import ClassVar
 
@@ -99,7 +100,7 @@ class ScanObjectNN(InMemoryDataset):
 
 
 if __name__ == '__main__':
-    root = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data', 'ScanObjectNN'))
+    root = os.path.join(os.path.realpath(sys.argv[1]), 'ScanObjectNN')
     dataset = ScanObjectNN(root=root, split='train')
     print(len(dataset))
     print(dataset.get(0))
