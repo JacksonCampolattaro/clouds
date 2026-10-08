@@ -26,5 +26,6 @@ url = "https://data.pyg.org/whl/torch-2.12.0+cu130.html"
 format = "flat"
 
 [extra-build-dependencies]
+pool = [{ requirement = "torch", match-runtime = true }]
 torch-fpsample = ["torch~=2.12.0", "setuptools"]
 vpsample = [{ requirement = "torch", match-runtime = true }]

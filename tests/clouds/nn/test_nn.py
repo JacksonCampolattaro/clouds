@@ -12,6 +12,7 @@ from clouds.nn.activation import FINER
 from clouds.nn.dropout import PathDropout, PointDropout
 from clouds.nn.functional import CombinedLoss
 from clouds.nn.models import MLP
+from clouds.nn.norm import DeLABatchNorm
 from clouds.nn.parallel import Parallel
 from clouds.nn.residual import Residual
 from clouds.nn.resolver import activation_resolver
@@ -80,3 +81,8 @@ def test_path_dropout_is_identity_in_eval():
 def test_activation_resolver_resolves_strings_and_custom_layers():
     assert isinstance(activation_resolver('relu'), nn.ReLU)
     assert isinstance(activation_resolver('finer'), FINER)
+
+
+def test_de_la_batch_norm_honours_init_weight():
+    norm = DeLABatchNorm(4, init_weight=0.5)
+    assert torch.allclose(norm.module.weight, torch.full_like(norm.module.weight, 0.5))

@@ -70,10 +70,12 @@ The package mirrors PyG's structure: data structures (`Data`/`Dataset` subclasse
 `clouds.home` helpers).
 
 - `clouds.nn` mirrors `torch_geometric.nn`: `resolver.py` (activation/normalization resolvers),
-  `sequential.py`, `dense/linear.py` (`Linear`), `models/mlp.py` (`MLP`), `conv/` (generic
-  source-indexed convs), `functional/` (losses), and `multigrid/` (wrappers over `clouds.data.MultiGridData`).
-  `apply.py` holds the `Data`-dispatch helpers. Keep architecture-specific layers in the consuming
-  project (gmnn), not here.
+  `sequential.py`, `dense/linear.py` (`Linear`), `models/` (`MLP` plus the DeLA MLPs), `norm/`
+  (DeLA batch/layer/RMS norms), `conv/` (generic source-indexed convs plus the DeLA/PointNeXt/spatial
+  encoding layers), `functional/` (losses), `edge_scaler.py` (edge feature encoders), and `multigrid/`
+  (wrappers over `clouds.data.MultiGridData`). `apply.py` holds the `Data`-dispatch helpers. The DeLA
+  conv uses `pool` (a non-PyPI git dependency declared as a runtime dependency whose source is inherited
+  from `pyproject.toml`).
 
 - `clouds.home` holds the cache-root helpers `get_home_dir()` / `set_home_dir()` (env `$CLOUDS_HOME`,
   default `~/.cache/clouds`), mirroring PyG's `torch_geometric.home`, plus `get_dataset_root(name)`.
