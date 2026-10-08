@@ -329,7 +329,8 @@ class SemanticWaymo(Dataset):
         # from waymo_open_dataset.dataset_pb2 import Frame, LaserName, MatrixFloat, MatrixInt32
 
         # Identify the test set
-        test_frame_ids = set(x.rstrip() for x in (open(self.raw_paths[-1], "r").readlines()))
+        with open(self.raw_paths[-1], "r") as f:
+            test_frame_ids = set(x.rstrip() for x in f.readlines())
         
         # Iterate over splits
         split_ids = dict(training=[], validation=[], testing=[])
@@ -374,7 +375,7 @@ if __name__ == '__main__':
     import random
     # dataset._data = random.shuffle(dataset._data)
 
-    for data in progress.track(dataset):
+    for _data in progress.track(dataset):
         pass
         # show_data(data)
 

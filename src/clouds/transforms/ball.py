@@ -41,4 +41,7 @@ class BallGraph(BaseTransform):
         return data
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(r={self.r}, loop={self.loop}, max_num_neighbors={self.k}, num_threads={self.num_threads})"
+        return (
+            f"{self.__class__.__name__}(r={self.r}, loop={self.loop}, max_num_neighbors={self.k}, "
+            f"num_threads={self.num_threads})"
+        )

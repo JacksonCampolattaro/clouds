@@ -191,12 +191,12 @@ class DALES(InMemoryDataset):
             y_starts = np.array([y_min])
 
         chunks: list[Data] = []
-        for i, x0 in enumerate(x_starts):
+        for x0 in x_starts:
             x1 = x0 + self.chunk_size
             in_x = (x >= x0) & (x < x1)
             if not np.any(in_x):
                 continue
-            for j, y0 in enumerate(y_starts):
+            for y0 in y_starts:
                 y1 = y0 + self.chunk_size
                 mask = in_x & (y >= y0) & (y < y1)
 
