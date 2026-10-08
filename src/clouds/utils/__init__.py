@@ -2,4 +2,8 @@ from .multigrid import construct_multigrid_modules as construct_multigrid_module
 from .multigrid import construct_multigrid_objects as construct_multigrid_objects
 from .multigrid import expand_multigrid_kwargs as expand_multigrid_kwargs
 from .sequence import _expand_ellipses as _expand_ellipses
+from .sequence import _normalize_list as _normalize_list
 from .sequence import construct_object as construct_object
+from .sequence import construct_sequence_objects as construct_sequence_objects
+from .sequence import construct_sequential_modules as construct_sequential_modules
+from .sequence import expand_sequence_kwargs as expand_sequence_kwargs

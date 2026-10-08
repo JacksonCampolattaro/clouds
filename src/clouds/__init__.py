@@ -1,6 +1,7 @@
 import clouds.data as data
 import clouds.datasets as datasets
 import clouds.loader as loader
+import clouds.nn as nn
 import clouds.transforms as transforms
 import clouds.utils as utils
 import clouds.visualization as visualization
@@ -16,6 +17,7 @@ __all__ = [
     'datasets',
     'get_home_dir',
     'loader',
+    'nn',
     'set_home_dir',
     'transforms',
     'utils',

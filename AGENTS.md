@@ -65,8 +65,15 @@ paths) — don't assume your change caused them.
 
 The package mirrors PyG's structure: data structures (`Data`/`Dataset` subclasses) live in
 `clouds.data`, loaders in `clouds.loader`, dataset definitions in `clouds.datasets`, transforms in
-`clouds.transforms`, and visualization in `clouds.visualization`. `clouds/__init__.py` eagerly imports
-every subpackage and exposes `__version__` / `__all__` (plus the `clouds.home` helpers).
+`clouds.transforms`, neural-network layers in `clouds.nn`, and visualization in `clouds.visualization`.
+`clouds/__init__.py` eagerly imports every subpackage and exposes `__version__` / `__all__` (plus the
+`clouds.home` helpers).
+
+- `clouds.nn` mirrors `torch_geometric.nn`: `resolver.py` (activation/normalization resolvers),
+  `sequential.py`, `dense/linear.py` (`Linear`), `models/mlp.py` (`MLP`), `conv/` (generic
+  source-indexed convs), `functional/` (losses), and `multigrid/` (wrappers over `clouds.data.MultiGridData`).
+  `apply.py` holds the `Data`-dispatch helpers. Keep architecture-specific layers in the consuming
+  project (gmnn), not here.
 
 - `clouds.home` holds the cache-root helpers `get_home_dir()` / `set_home_dir()` (env `$CLOUDS_HOME`,
   default `~/.cache/clouds`), mirroring PyG's `torch_geometric.home`, plus `get_dataset_root(name)`.
