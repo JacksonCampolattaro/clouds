@@ -1,6 +1,5 @@
 import os
 import os.path as osp
-import sys
 import tarfile
 from collections.abc import Callable
 
@@ -8,6 +7,8 @@ import laspy
 import numpy as np
 import torch
 from torch_geometric.data import Data, InMemoryDataset
+
+from clouds.home import get_dataset_root
 
 DALES_NUM_CLASSES = 8
 
@@ -233,9 +234,10 @@ def _fmt_num(value: float) -> str:
 
 
 if __name__ == '__main__':
-    from clouds.show import show_data
     from clouds.transforms import CenterPoints
-    root = os.path.join(os.path.realpath(sys.argv[1]), 'DALES')
+    from clouds.visualization import show_data
+
+    root = get_dataset_root('DALES')
     dataset = DALES(root=root, transform=CenterPoints([0, 1]))
     print(len(dataset))
     show_data(dataset[0])

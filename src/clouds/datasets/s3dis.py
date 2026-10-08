@@ -2,7 +2,6 @@ import glob
 import os
 import pickle
 import random
-import sys
 from collections.abc import Callable
 
 import numpy as np
@@ -11,6 +10,8 @@ from rich import print, progress
 from torch_geometric.data import Data, InMemoryDataset, download_url, extract_zip
 from torch_geometric.data.data import BaseData
 from torch_geometric.io import fs
+
+from clouds.home import get_dataset_root
 
 from ..transforms.random_affine import RandomRotate
 
@@ -229,9 +230,9 @@ if __name__ == '__main__':
 
     from torch_geometric.data import DataLoader
 
-    from clouds.data import ThreadingDataLoader
+    from clouds.loader import ThreadingDataLoader
 
-    root = os.path.join(os.path.realpath(sys.argv[1]), 'S3DIS')
+    root = get_dataset_root('S3DIS')
     dataset = S3DIS(root=root, split='train')
     print(len(dataset))
     print(dataset.get(0))

@@ -20,9 +20,8 @@ Commands:
   (line length 128, `quote-style = "preserve"` — don't reflow quotes)
 - Type check: `uv run ty check`
 
-Lint and typecheck are **not clean** on `main`: `ruff` reports pre-existing violations (unused imports /
-loop vars in the dataset loaders) and `ty check` reports many diagnostics. Don't assume your change caused
-them.
+Lint is clean; `ty check` is **not** clean on `main` and reports many diagnostics (PyG reflection / private
+paths) — don't assume your change caused them.
 
 ## Transform / data conventions (non-obvious)
 
@@ -62,17 +61,29 @@ them.
 - **Optional backends** use the `try: import X` / `except ImportError` + `HAS_*` flag + device check +
   fallback-with-warning pattern (see `transforms/knn.py`).
 
+## Package layout
+
+The package mirrors PyG's structure: data structures (`Data`/`Dataset` subclasses) live in
+`clouds.data`, loaders in `clouds.loader`, dataset definitions in `clouds.datasets`, transforms in
+`clouds.transforms`, and visualization in `clouds.visualization`. `clouds/__init__.py` eagerly imports
+every subpackage and exposes `__version__` / `__all__` (plus the `clouds.home` helpers).
+
+- `clouds.home` holds the cache-root helpers `get_home_dir()` / `set_home_dir()` (env `$CLOUDS_HOME`,
+  default `~/.cache/clouds`), mirroring PyG's `torch_geometric.home`, plus `get_dataset_root(name)`.
+- `clouds.data` holds only containers/machinery (`SourceIndexedData`); `clouds.loader` holds
+  `ThreadingDataLoader`. Keep new loaders in `clouds.loader`, not `clouds.data`.
+
 ## Datasets
 
 - One loader per file `src/clouds/datasets/<name>.py`, re-exported (with aliases) from
   `clouds/datasets/__init__.py`. The package follows PyG: classes are reached via `clouds.datasets.*`
-  (e.g. `from clouds.datasets import ModelNet40`); `clouds/__init__.py` only exposes the subpackage
-  (`from . import datasets as datasets`) and deliberately does **not** re-export dataset classes.
-  `DALES` is re-exported like the others.
+  (e.g. `from clouds.datasets import ModelNet40`); `clouds/__init__.py` does **not** re-export dataset
+  classes. `DALES` is re-exported like the others.
 - Loaders subclass `InMemoryDataset`/`Dataset` and take their data location from the caller. There is no
-  default cache root inside the package; each loader's `__main__` uses `sys.argv[1]` as the data
-  directory (`root = os.path.join(os.path.realpath(sys.argv[1]), '<Name>')`). Never commit downloaded
-  data. `.data/`, `data.daic/`, `*.pkl`, and `*.ckpt` are gitignored.
+  default cache root inside the package; each loader's `__main__` gets its root from
+  `clouds.home.get_dataset_root('<Name>')`, which uses `sys.argv[1]` when given and otherwise falls back
+  to `get_home_dir()`. Never commit downloaded data. `.data/`, `data.daic/`, `*.pkl`, and `*.ckpt` are
+  gitignored.
 - `tests/clouds/datasets/test_dataset_importability.py` checks that every public dataset class in
   `clouds.datasets` is reachable; the loaders themselves still have no functional tests.
 

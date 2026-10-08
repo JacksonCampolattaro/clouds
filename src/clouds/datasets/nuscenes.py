@@ -1,7 +1,6 @@
 import os
 import pickle
 import random
-import sys
 from collections.abc import Callable
 
 import numpy as np
@@ -10,6 +9,8 @@ from torch import Tensor
 from torch_geometric.data import Data, Dataset, download_url, extract_tar
 from torch_geometric.data.data import BaseData
 from torch_geometric.data.dataset import IndexType
+
+from clouds.home import get_dataset_root
 
 # Adapted from:
 # https://github.com/VisualComputingInstitute/ditr/blob/main/pointcept/datasets/nuscenes.py
@@ -139,7 +140,7 @@ class SemanticNuScenes(Dataset):
 
 
 if __name__ == '__main__':
-    root = os.path.join(os.path.realpath(sys.argv[1]), 'SemanticNuScenes')
+    root = get_dataset_root('SemanticNuScenes')
     print(root)
     dataset = SemanticNuScenes(root=root, split='pred')
     print(len(dataset))

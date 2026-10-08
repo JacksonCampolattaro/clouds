@@ -1,11 +1,12 @@
 import os
-import sys
 from typing import ClassVar
 
 import gdown
 import h5py
 import torch
 from torch_geometric.data import Data, InMemoryDataset, extract_zip
+
+from clouds.home import get_dataset_root
 
 
 class ModelNetC(InMemoryDataset):
@@ -71,7 +72,7 @@ class ModelNetC(InMemoryDataset):
 
 
 if __name__ == '__main__':
-    root = os.path.join(os.path.realpath(sys.argv[1]), 'ModelNetC')
+    root = get_dataset_root('ModelNetC')
     dataset = ModelNetC(root=root, split='clean')
     print(len(dataset))
     print(dataset.get(0))

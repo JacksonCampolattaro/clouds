@@ -1,11 +1,12 @@
 import os
-import sys
 from collections.abc import Callable
 from typing import ClassVar
 
 import h5py
 import torch
 from torch_geometric.data import Data, InMemoryDataset, download_url, extract_zip
+
+from clouds.home import get_dataset_root
 
 # Adapted from https://github.com/rubenwiersma/deltaconv/blob/master/experiments/datasets/scanobjectnn.py
 
@@ -100,7 +101,7 @@ class ScanObjectNN(InMemoryDataset):
 
 
 if __name__ == '__main__':
-    root = os.path.join(os.path.realpath(sys.argv[1]), 'ScanObjectNN')
+    root = get_dataset_root('ScanObjectNN')
     dataset = ScanObjectNN(root=root, split='train')
     print(len(dataset))
     print(dataset.get(0))

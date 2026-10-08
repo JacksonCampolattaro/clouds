@@ -24,6 +24,8 @@ from torch_geometric.data.data import BaseData  # private path; no public re-exp
 from torch_geometric.data.dataset import IndexType
 from torch_geometric.data.separate import separate
 
+from clouds.home import get_dataset_root
+
 
 def _get_rotation_matrix(roll, pitch, yaw):
   cos_roll, sin_roll = torch.cos(roll), torch.sin(roll)
@@ -370,7 +372,7 @@ class SemanticWaymo(Dataset):
 
 
 if __name__ == '__main__':
-    root = os.path.join(os.path.realpath(sys.argv[1]), 'SemanticWaymo')
+    root = get_dataset_root('SemanticWaymo')
     dataset = SemanticWaymo(root=root, split='train')
     import random
     # dataset._data = random.shuffle(dataset._data)

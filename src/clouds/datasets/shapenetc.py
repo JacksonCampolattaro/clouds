@@ -1,5 +1,4 @@
 import os
-import sys
 from collections.abc import Callable
 from typing import ClassVar
 
@@ -7,6 +6,8 @@ import gdown
 import h5py
 import torch
 from torch_geometric.data import Data, InMemoryDataset, extract_zip
+
+from clouds.home import get_dataset_root
 
 
 class ShapeNetC(InMemoryDataset):
@@ -82,7 +83,7 @@ class ShapeNetC(InMemoryDataset):
 
 
 if __name__ == '__main__':
-    root = os.path.join(os.path.realpath(sys.argv[1]), 'ShapeNetC')
+    root = get_dataset_root('ShapeNetC')
     dataset = ShapeNetC(root=root, split='clean')
     print(len(dataset))
     print(dataset.get(0))

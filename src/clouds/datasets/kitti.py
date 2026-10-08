@@ -1,6 +1,5 @@
 import os
 import random
-import sys
 from collections.abc import Callable
 from typing import ClassVar
 
@@ -10,6 +9,8 @@ from torch import Tensor
 from torch_geometric.data import Data, Dataset
 from torch_geometric.data.data import BaseData
 from torch_geometric.data.dataset import IndexType
+
+from clouds.home import get_dataset_root
 
 # Adapted from:
 # https://github.com/Pointcept/Pointcept/blob/04a0232b70f5c7091ffdc6bfe7a476e3eb7daff2/pointcept/datasets/semantic_kitti.py#L22
@@ -187,8 +188,8 @@ class SemanticKITTI(Dataset):
 
 if __name__ == '__main__':
     # data.daic needs to be mounted with sshfs, this is a massive dataset!
-    root = os.path.join(os.path.realpath(sys.argv[1]), 'SemanticKITTI')
+    root = get_dataset_root('SemanticKITTI')
     dataset = SemanticKITTI(root=root, split='train')
-    from clouds.show import show_data
+    from clouds.visualization import show_data
     print(len(dataset))
     show_data(dataset.get(0))

@@ -1,11 +1,12 @@
 import os
-import sys
 
 import gdown
 import torch
 from torch import Tensor
 from torch_geometric.data import InMemoryDataset, extract_zip
 from torch_geometric.io import read_off
+
+from clouds.home import get_dataset_root
 
 # Adapted from:
 # https://github.com/rubenwiersma/hsn/blob/master/datasets/faust.py
@@ -101,7 +102,7 @@ class FAUSTRemeshed(InMemoryDataset):
 
 
 if __name__ == '__main__':
-    root = os.path.join(os.path.realpath(sys.argv[1]), 'FAUSTRemeshed')
+    root = get_dataset_root('FAUSTRemeshed')
     dataset = FAUSTRemeshed(root=root)
     print(len(dataset))
     print(dataset.get(0))

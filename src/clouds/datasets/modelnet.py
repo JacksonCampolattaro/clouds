@@ -1,5 +1,4 @@
 import os
-import sys
 from collections.abc import Callable
 from typing import ClassVar
 
@@ -7,6 +6,8 @@ import h5py
 import torch
 from torch_geometric.data import Data, InMemoryDataset, download_url, extract_zip
 from torch_geometric.io import fs
+
+from clouds.home import get_dataset_root
 
 
 class ModelNet40(InMemoryDataset):
@@ -69,7 +70,7 @@ class ModelNet40(InMemoryDataset):
 
 
 if __name__ == '__main__':
-    root = os.path.join(os.path.realpath(sys.argv[1]), 'ModelNet40')
+    root = get_dataset_root('ModelNet40')
     dataset = ModelNet40(root=root)
     print(len(dataset))
     print(dataset.get(0).pos)
