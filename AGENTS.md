@@ -6,11 +6,7 @@ transforms. Library code is in `src/clouds/`; tests mirror it under `tests/cloud
 ## Toolchain
 
 - Python >=3.12 (`uv`-managed, backend `uv_build`).
-- The dev accelerator stack (PyTorch 2.12 + CUDA 13 and prebuilt PyG extension wheels) is configured in
-  `uv.toml`, deliberately **not** `pyproject.toml`, so consumers don't inherit the CUDA index.
-  Run `uv sync --dev` to install it.
-- `uv.lock` is gitignored and machine-specific; do not commit it or treat it as a source of truth.
-- `ruff` and `ty` are not project dependencies; they resolve from `PATH`.
+- The dev accelerator stack (PyTorch 2.12 + CUDA 13 and prebuilt PyG extension wheels) must be installed with `uv sync --dev`.
 
 Commands:
 
@@ -48,6 +44,9 @@ paths) — don't assume your change caused them.
   `X | None` / `X | Y`. Do not use `typing.Optional` / `Union` / `List` / `Callable`; keep only
   `ClassVar` / `Any` from `typing`. Forward references to names that may not be importable at runtime
   (e.g. the optional `KDTree`) must be quoted strings.
+- **Quoting**: use double quotes for human-readable output — exception messages, `__repr__`, printed
+  text, docstrings — and single quotes everywhere else, especially string literals used as keys or
+  identifiers (dict keys, split names, filenames, attribute names).
 - **Imports within `clouds` are relative** (`from .knn import knn`, `from ..data import ...`); external
   imports stay absolute. `__init__.py` re-exports with the explicit `from .mod import Name as Name` form.
 - **Transforms are thin `BaseTransform` subclasses**: `def forward(self, data: Data) -> Data:` mutates
