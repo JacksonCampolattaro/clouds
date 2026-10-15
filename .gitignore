@@ -3,6 +3,7 @@ __pycache__/
 .optuna/
 .idea/
 .jj/
+.envrc
 
 *.ini
 *.ckpt

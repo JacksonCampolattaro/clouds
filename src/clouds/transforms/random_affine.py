@@ -127,7 +127,13 @@ class RandomScale(BaseTransform):
         device = data.node_stores[0].pos.device
 
         if hasattr(data, 'batch') and data.batch is not None:
-            # Batched data: apply different transforms per batch element
+            # Batched data: apply different transforms per batch element. Clone first so that
+            # the writes below never reach the shared storage a cached dataset handed out.
+            data.pos = data.pos.clone()
+            for store in data.node_stores:
+                if self.correct_norm and hasattr(store, 'norm'):
+                    store.norm = store.norm.clone()
+
             num_graphs = data.batch.max().item() + 1
             for i in range(num_graphs):
                 if random.random() >= self.p:
@@ -189,7 +195,13 @@ class RandomRotate(BaseTransform):
         device = data.node_stores[0].pos.device
 
         if hasattr(data, 'batch') and data.batch is not None:
-            # Batched data: apply different transforms per batch element
+            # Batched data: apply different transforms per batch element. Clone first so that
+            # the writes below never reach the shared storage a cached dataset handed out.
+            data.pos = data.pos.clone()
+            for store in data.node_stores:
+                if self.correct_norm and hasattr(store, 'norm'):
+                    store.norm = store.norm.clone()
+
             num_graphs = data.batch.max().item() + 1
             for i in range(num_graphs):
                 if random.random() >= self.p:
@@ -266,7 +278,13 @@ class RandomScaleAndRotate(BaseTransform):
         device = data.node_stores[0].pos.device
 
         if hasattr(data, 'batch') and data.batch is not None:
-            # Batched data: apply different transforms per batch element
+            # Batched data: apply different transforms per batch element. Clone first so that
+            # the writes below never reach the shared storage a cached dataset handed out.
+            data.pos = data.pos.clone()
+            for store in data.node_stores:
+                if self.correct_norm and hasattr(store, 'norm'):
+                    store.norm = store.norm.clone()
+
             num_graphs = data.batch.max().item() + 1
             for i in range(num_graphs):
                 apply_scale = random.random() < self.scale_prob

@@ -207,6 +207,8 @@ class FlattenMultigrid(BaseTransform):
                         ),
                     ]
                 )
+            else:
+                edge_index = edge_index.clone()
 
             edge_index[0] += data[source_level].offset
             edge_index[1] += data[dest_level].offset

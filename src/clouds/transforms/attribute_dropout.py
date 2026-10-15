@@ -21,9 +21,10 @@ class AttributeDropout(BaseTransform):
             if isinstance(getattr(store, 'batch', None), Tensor):
                 batch_size = store.batch_size if hasattr(store, 'batch_size') else store.batch.amax() + 1
                 mask = torch.rand([batch_size], device=store.batch.device) < self.p
-                feature[mask[store.batch]] = 0
+                keep = ~mask[store.batch].reshape(-1, *([1] * (feature.dim() - 1)))
+                store[self.feature] = torch.where(keep, feature, torch.zeros_like(feature))
             elif random.random() < self.p:
-                feature.fill_(0)
+                store[self.feature] = torch.zeros_like(feature)
 
         return data
 
