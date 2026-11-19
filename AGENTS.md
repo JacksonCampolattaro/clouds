@@ -93,7 +93,16 @@ The package mirrors PyG's structure: data structures (`Data`/`Dataset` subclasse
   to `get_home_dir()`. Never commit downloaded data. `.data/`, `data.daic/`, `*.pkl`, and `*.ckpt` are
   gitignored.
 - `tests/clouds/datasets/test_dataset_importability.py` checks that every public dataset class in
-  `clouds.datasets` is reachable; the loaders themselves still have no functional tests.
+  `clouds.datasets` is reachable. `SemanticWaymo` has synthetic-frame tests in `test_waymo.py`; the other loaders themselves still have no functional tests.
+- `SemanticWaymo` (`datasets/waymo.py`) stores one frame per `numpy` `.npz` file,
+  `processed/<split>/<segment>/<frame:04d>.npz`, written with `np.savez_compressed` (deflate; the zip CRC32 provides
+  per-frame integrity). Arrays are `pos` (float32 `[n,3]`), `intensity` (float32 `[n,1]`, post-`tanh`), and `y`
+  (int8, −1…21) only for labeled frames. Per-split JSON indexes (`processed/index_{training,validation,testing}.json`,
+  `{"version": 2, ...}`) map each segment to its frame count. The only build path is raw `.tfrecord` → `.npz`; an
+  interrupted build resumes (scans whose output directory already exists are skipped). Processed-only roots (no `raw/`)
+  load fine, and are meant to live on local disk — reading many small `.npz` files over CIFS is slow. Build and verify with
+  `python -m clouds.datasets.waymo process|verify --root <root> --split <training|validation|testing>`. Builds take hours; never run them
+  unattended without a log.
 
 ## Tests
 
