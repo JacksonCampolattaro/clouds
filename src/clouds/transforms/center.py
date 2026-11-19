@@ -10,7 +10,9 @@ class CenterPoints(BaseTransform):
         self.dims = dims or [0, 1, 2]
 
     def _aggregate(self, pos: Tensor, index: Tensor | None, ptr: Tensor | None) -> Tensor:
-        return MeanAggregation()(pos, index=index, ptr=ptr, dim=0)
+        # PyG reduces in the input dtype, and a float32 mean of large coordinates
+        # (e.g. UTM metres) is off by hundreds of metres, so reduce in float64.
+        return MeanAggregation()(pos.double(), index=index, ptr=ptr, dim=0)
 
     def forward(self, data: Data) -> Data:
         offset = None
@@ -27,7 +29,8 @@ class CenterPoints(BaseTransform):
             # hand out views into shared storage, and an in-place write there is then
             # copied-on-write by every forked DataLoader worker.
             store.pos = pos.clone()
-            store.pos[:, self.dims] -= offset[batch] if isinstance(batch, Tensor) else offset
+            offset_per_node = offset[batch] if isinstance(batch, Tensor) else offset
+            store.pos[:, self.dims] = (pos[:, self.dims].double() - offset_per_node).to(pos.dtype)
 
         return data
 
